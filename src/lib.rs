@@ -77,10 +77,6 @@ macro_rules! ROL {
     ($x: expr, $s: expr) => ((($x) << $s) | (($x) >> (64 - $s)))
 }
 
-macro_rules! REPEAT6 {
-    ($e: expr) => ( for _ in 0..6 { $e } )
-}
-
 macro_rules! REPEAT5 {
     ($e: expr) => ( for _ in 0..5 { $e } )
 }
@@ -165,9 +161,10 @@ fn setout(src: &[u8], dst: &mut [u8], len: usize) {
 
 const PLEN: usize = 200;
 
-fn hash(input: &[u8], rate: usize, delim: u8, outlen: usize) -> Vec<u8> {
+fn hash(input: &[u8], rate: usize, delim: u8, output: &mut [u8]) {
 
     let inlen = input.len();
+    let outlen = output.len();
     let mut a: [u8; PLEN] = [0; PLEN];
 
     // Absorb input
@@ -192,43 +189,37 @@ fn hash(input: &[u8], rate: usize, delim: u8, outlen: usize) -> Vec<u8> {
     // apply keccakf
     keccakf_u8(&mut a);
 
-    let mut out = vec![];
-    out.reserve(outlen);
-    unsafe { out.set_len(outlen); }
-    
     // squeeze output
     {
         // second foldp
         let mut op = 0;
         let mut l = outlen;
         while l >= rate {
-            setout(&a, &mut out[op..], rate);
+            setout(&a, &mut output[op..], rate);
             keccakf_u8(&mut a);
             op += rate;
             l -= rate;
         }
 
-        setout(&a, &mut out[op..], l);
+        setout(&a, &mut output[op..], l);
     }
-
-    out
 }
 
 macro_rules! define_shake {
     ($name: ident, $bits: expr) => {
-        pub fn $name (input: &[u8], outlen: usize) -> Vec<u8> {
-            hash(input, 200 - ($bits/4), 0x1f, outlen)
+        pub fn $name (input: &[u8], output: &mut [u8]) {
+            hash(input, 200 - ($bits/4), 0x1f, output)
         }
     }
 }
 
 macro_rules! define_sha3 {
     ($name: ident, $bits: expr) => {
-        pub fn $name (input: &[u8], outlen: usize) -> Vec<u8> {
-            if outlen > $bits / 8 {
+        pub fn $name (input: &[u8], output: &mut [u8]) {
+            if output.len() > $bits / 8 {
                 panic!();
             }
-            hash(input, 200 - ($bits/4), 0x6, outlen)
+            hash(input, 200 - ($bits/4), 0x6, output)
         }
     }
 }
@@ -249,7 +240,8 @@ mod tests {
 
     #[test]
     fn empty_input() {
-        let res = sha3(&[], 32);
+        let mut res: [u8; 32] = [0; 32];
+        sha3(&[], &mut res);
 
         let expected = vec![
             0xa7, 0xff, 0xc6, 0xf8, 0xbf, 0x1e, 0xd7, 0x66,
@@ -258,13 +250,15 @@ mod tests {
             0x82, 0xd8, 0x0a, 0x4b, 0x80, 0xf8, 0x43, 0x4a
         ];
 
-        assert_eq!(res, expected);
+        let ref_ex: &[u8] = &expected;
+        assert_eq!(&res, ref_ex);
     }
 
     #[test]
     fn plain_string() {
         let v: Vec<u8> = From::from("hello");
-        let res = sha3(&v, 32);
+        let mut res: [u8; 32] = [0; 32];
+        sha3(&v, &mut res);
 
         let expected = vec![
             0x33, 0x38, 0xbe, 0x69, 0x4f, 0x50, 0xc5, 0xf3,
@@ -273,14 +267,16 @@ mod tests {
             0x2a, 0xf4, 0xb9, 0x20, 0x23, 0x98, 0xf3, 0x92
         ];
 
-        assert_eq!(res, expected);
+        let ref_ex: &[u8] = &expected;
+        assert_eq!(&res, ref_ex);
     }
 
     #[test]
     fn long_input() {
         let v: Vec<u8> = From::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
-        let res = sha3_512(&v, 64);
+        let mut res: [u8; 64] = [0; 64];
+        sha3_512(&v, &mut res);
 
         let expected = vec![
             0xf3, 0x2a, 0x94, 0x23, 0x55, 0x13, 0x51, 0xdf, 
@@ -293,7 +289,10 @@ mod tests {
             0x0c, 0xbd, 0xe1, 0x00, 0x9c, 0x7d, 0x0f, 0x09
         ];
 
-        assert_eq!(res, expected);
+
+        let ref_res: &[u8] = &res;
+        let ref_ex: &[u8] = &expected;
+        assert_eq!(ref_res, ref_ex);
     }
 }
 
