@@ -1,4 +1,19 @@
-//! tiny keccak
+//! An implementation of the FIPS-202-defined SHA-3 
+//! and SHAKE functions in 120 cloc (156 lines). 
+//! 
+//! The `Keccak-f[1600]` permutation is fully unrolled; 
+//! it's nearly as fast as the Keccak team's optimized permutation.
+//!
+//! Original implemntation in C: 
+//! https://github.com/coruus/keccak-tiny
+//!
+//! Implementor: David Leon Gil
+//! 
+//! Port to rust: 
+//! Marek Kotewicz (marek.kotewicz@gmail.com)
+//!
+//! License: CC0, attribution kindly requested. Blame taken too,
+//! but not liability.
 
 trait TransmuteToU64 {
     fn transmute_to_u64<'a>(&'a mut self) -> &'a mut [u64];
@@ -107,7 +122,6 @@ fn keccakf(a: &mut [u64]) {
                 b[x] = a[y + x];
             });
             FOR5!(x, 1, {
-                // is "~" equal rust "!" ?
                 a[y + x] = b[x] ^ ((!b[(x + 1) % 5]) & b[(x + 2) % 5]);
             });
         });
