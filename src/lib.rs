@@ -213,6 +213,17 @@ macro_rules! define_shake {
     }
 }
 
+macro_rules! define_keccak {
+    ($name: ident, $bits: expr) => {
+        pub fn $name (input: &[u8], output: &mut [u8]) {
+            if output.len() > $bits / 8 {
+                panic!();
+            }
+            hash(input, 200 - ($bits/4), 0x1, output)
+        }
+    }
+}
+
 macro_rules! define_sha3 {
     ($name: ident, $bits: expr) => {
         pub fn $name (input: &[u8], output: &mut [u8]) {
@@ -227,6 +238,11 @@ macro_rules! define_sha3 {
 define_shake!(shake_128, 128);
 define_shake!(shake_256, 256);
 
+define_keccak!(keccak_224, 224);
+define_keccak!(keccak_256, 256);
+define_keccak!(keccak_384, 384);
+define_keccak!(keccak_512, 512);
+
 define_sha3!(sha3_224, 224);
 define_sha3!(sha3_256, 256);
 define_sha3!(sha3_384, 384);
@@ -235,11 +251,28 @@ define_sha3!(sha3_512, 512);
 
 #[cfg(test)]
 mod tests {
+    use keccak_256 as keccak;
     use sha3_256 as sha3;
     use sha3_512;
 
     #[test]
-    fn empty_input() {
+    fn empty_keccak() {
+        let mut res: [u8; 32] = [0; 32];
+        keccak(&[], &mut res);
+
+        let expected = vec![
+            0xc5, 0xd2, 0x46, 0x01, 0x86, 0xf7, 0x23, 0x3c,
+            0x92, 0x7e, 0x7d, 0xb2, 0xdc, 0xc7, 0x03, 0xc0,
+            0xe5, 0x00, 0xb6, 0x53, 0xca, 0x82, 0x27, 0x3b,
+            0x7b, 0xfa, 0xd8, 0x04, 0x5d, 0x85, 0xa4, 0x70
+        ];
+
+        let ref_ex: &[u8] = &expected;
+        assert_eq!(&res, ref_ex);
+    }
+
+    #[test]
+    fn empty_sha3_256() {
         let mut res: [u8; 32] = [0; 32];
         sha3(&[], &mut res);
 
@@ -255,7 +288,7 @@ mod tests {
     }
 
     #[test]
-    fn plain_string() {
+    fn string_sha3_256() {
         let v: Vec<u8> = From::from("hello");
         let mut res: [u8; 32] = [0; 32];
         sha3(&v, &mut res);
@@ -272,7 +305,7 @@ mod tests {
     }
 
     #[test]
-    fn long_input() {
+    fn long_string_sha3_512() {
         let v: Vec<u8> = From::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
         let mut res: [u8; 64] = [0; 64];
