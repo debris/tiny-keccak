@@ -180,6 +180,14 @@ fn hash(input: &[u8], rate: usize, delim: u8, outlen: usize) -> Vec<u8> {
     res
 }
 
+macro_rules! define_shake {
+    ($name: ident, $bits: expr) => {
+        pub fn $name (input: &[u8], outlen: usize) -> Vec<u8> {
+            hash(input, 200 - ($bits/4), 0x1f, outlen)
+        }
+    }
+}
+
 macro_rules! define_sha3 {
     ($name: ident, $bits: expr) => {
         pub fn $name (input: &[u8], outlen: usize) -> Vec<u8> {
@@ -191,23 +199,35 @@ macro_rules! define_sha3 {
     }
 }
 
+define_shake!(shake_128, 128);
+define_shake!(shake_256, 256);
+
 define_sha3!(sha3_224, 224);
 define_sha3!(sha3_256, 256);
 define_sha3!(sha3_384, 384);
 define_sha3!(sha3_512, 512);
 
-#[test]
-fn it_works() {
 
-    let v: Vec<u8> = From::from("hello");
-    let res = sha3_256(&v, 32);
+#[cfg(test)]
+mod tests {
+    use sha3_256 as sha3;
 
-    let expected = vec![
-        0x33, 0x38, 0xbe, 0x69, 0x4f, 0x50, 0xc5, 0xf3,
-        0x38, 0x81, 0x49, 0x86, 0xcd, 0xf0, 0x68, 0x64, 
-        0x53, 0xa8, 0x88, 0xb8, 0x4f, 0x42, 0x4d, 0x79,
-        0x2a, 0xf4, 0xb9, 0x20, 0x23, 0x98, 0xf3, 0x92
-    ];
-    assert_eq!(res, expected);
+    #[test]
+    fn it_works() {
+
+        let v: Vec<u8> = From::from("hello");
+        let res = sha3(&v, 32);
+
+        let expected = vec![
+            0x33, 0x38, 0xbe, 0x69, 0x4f, 0x50, 0xc5, 0xf3,
+            0x38, 0x81, 0x49, 0x86, 0xcd, 0xf0, 0x68, 0x64, 
+            0x53, 0xa8, 0x88, 0xb8, 0x4f, 0x42, 0x4d, 0x79,
+            0x2a, 0xf4, 0xb9, 0x20, 0x23, 0x98, 0xf3, 0x92
+        ];
+
+        assert_eq!(res, expected);
+    }
 }
+
+
 
