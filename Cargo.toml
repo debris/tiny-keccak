@@ -3,5 +3,5 @@ description = "An implementation of the FIPS-202-defined SHA-3 and SHAKE functio
 homepage = "https://github.com/debris/tiny-keccak"
 license = "CC0-1.0"
 name = "tiny-keccak"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["debris <marek.kotewicz@gmail.com>"]
