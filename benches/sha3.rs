@@ -14,9 +14,11 @@ use test::Bencher;
 
 #[bench]
 fn bench_sha3_256(b: &mut Bencher) {
-    let v: Vec<u8> = From::from("hello");
-    b.iter(|| {
-        let mut res: [u8; 32] = [0; 32];
-        let _ = sha3_256(&v, &mut res);
-    });
+	let data: Vec<u8> = From::from("hello");
+	b.iter(|| {
+		let mut res: [u8; 32] = [0; 32];
+		let mut keccak = Keccak::new_sha3_256();
+		keccak.update(&data);
+		keccak.finalize(&mut res);
+	});
 }
