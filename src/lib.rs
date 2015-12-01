@@ -35,21 +35,6 @@
 //! License: CC0, attribution kindly requested. Blame taken too,
 //! but not liability.
 
-trait TransmuteToU64 {
-	fn transmute_to_u64<'a>(&'a mut self) -> &'a mut [u64];
-}
-
-impl TransmuteToU64 for [u8] {
-
-	#[allow(mutable_transmutes)]
-	fn transmute_to_u64<'a>(&'a mut self) -> &'a mut [u64] {
-		unsafe {
-			let p = self.as_mut_ptr();
-			std::mem::transmute(std::slice::from_raw_parts(p, self.len() / 8))
-		}
-	}
-}
-
 const RHO: [usize; 24] = [
 	 1,  3,  6, 10, 15, 21,
 	28, 36, 45, 55,  2, 14,
@@ -95,13 +80,8 @@ macro_rules! FOR5 {
 	}
 }
 
-/// helper function
-fn keccakf_u8(a: &mut [u8]) {
-	keccakf(a.transmute_to_u64());
-}
-
 /// keccak-f[1600]
-fn keccakf(a: &mut [u64]) {
+pub fn keccakf(a: &mut [u64]) {
 	let mut b: [u64; 5] = [0; 5];
 	let mut t: u64;
 	let mut x: usize;
@@ -154,12 +134,27 @@ fn xorin(dst: &mut [u8], src: &[u8], len: usize) {
 }
 
 fn setout(src: &[u8], dst: &mut [u8], len: usize) {
-	for i in 0..len {
-		dst[i] = src[i];
+	unsafe {
+		::std::ptr::copy(src.as_ptr(), dst.as_mut_ptr(), len);
 	}
 }
 
-const PLEN: usize = 200;
+/// Total number of lanes.
+const PLEN: usize = 25;
+
+/// Lets cheat borrow checker. 
+fn as_bytes_slice<'a, 'b>(ints: &'a [u64]) -> &'b [u8] {
+	unsafe {
+		::std::slice::from_raw_parts(ints.as_ptr() as *mut u8, ints.len() * 8)
+	}
+}
+
+/// Lets cheat borrow checker... again.
+fn as_mut_bytes_slice<'a, 'b>(ints: &'a mut [u64]) -> &'b mut [u8] {
+	unsafe {
+		::std::slice::from_raw_parts_mut(ints.as_mut_ptr() as *mut u8, ints.len() * 8)
+	}
+}
 
 /// This structure should be used to create keccak/sha3 hash.
 ///
@@ -191,7 +186,7 @@ const PLEN: usize = 200;
 /// }
 /// ```
 pub struct Keccak {
-	a: [u8; PLEN],
+	a: [u64; PLEN],
 	offset: usize,
 	rate: usize,
 	delim: u8
@@ -250,7 +245,7 @@ impl Keccak {
 		self.pad();
 		
 		// apply keccakf
-		keccakf_u8(&mut self.a);
+		keccakf(&mut self.a);
 
 		// squeeze output
 		self.squeeze(output);
@@ -258,6 +253,8 @@ impl Keccak {
 
 	// Absorb input
 	fn absorb(&mut self, input: &[u8]) {
+		let mut a = as_mut_bytes_slice(&mut self.a);
+
 		let inlen = input.len();
 		let mut offset = self.offset;
 		let mut rate = self.rate - offset;
@@ -266,8 +263,8 @@ impl Keccak {
 		let mut ip = 0;
 		let mut l = inlen;
 		while l >= rate {
-			xorin(&mut self.a[offset..], &input[ip..], rate);
-			keccakf_u8(&mut self.a);
+			xorin(&mut a[offset..], &input[ip..], rate);
+			keccakf(&mut self.a);
 			ip += rate;
 			l -= rate;
 			rate = self.rate;
@@ -276,19 +273,22 @@ impl Keccak {
 		}
 
 		// Xor in the last block 
-		xorin(&mut self.a[offset..], &input[ip..], l);
+		xorin(&mut a[offset..], &input[ip..], l);
 		self.offset += l;
 	}
 
 	fn pad(&mut self) {
+		let mut a = as_mut_bytes_slice(&mut self.a);
+
 		let offset = self.offset;
 		let rate = self.rate;
-		self.a[offset] ^= self.delim;
-		self.a[rate - 1] ^= 0x80;
+		a[offset] ^= self.delim;
+		a[rate - 1] ^= 0x80;
 	}
 
 	// squeeze output
 	fn squeeze(&mut self, output: &mut [u8]) {
+		let a = as_bytes_slice(&mut self.a);
 
 		let outlen = output.len();
 		let rate = self.rate;
@@ -297,13 +297,13 @@ impl Keccak {
 		let mut op = 0;
 		let mut l = outlen;
 		while l >= rate {
-			setout(&self.a, &mut output[op..], rate);
-			keccakf_u8(&mut self.a);
+			setout(&a, &mut output[op..], rate);
+			keccakf(&mut self.a);
 			op += rate;
 			l -= rate;
 		}
 
-		setout(&self.a, &mut output[op..], l);
+		setout(&a, &mut output[op..], l);
 	}
 }
 
