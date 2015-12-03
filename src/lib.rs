@@ -107,7 +107,8 @@ pub fn keccakf(a: &mut [u64]) {
 		x = 0;
 		REPEAT24!({
 			b[0] = a[PI[x]];
-			a[PI[x]] = ROL!(t, RHO[x]);
+			let rhox = RHO[x]; // 'const_indexing' issue
+			a[PI[x]] = ROL!(t, rhox);
 			t = b[0];
 			x += 1;
 		});
