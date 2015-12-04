@@ -22,3 +22,11 @@ fn bench_sha3_256(b: &mut Bencher) {
 		keccak.finalize(&mut res);
 	});
 }
+
+#[bench]
+fn keccakf_u64(b: &mut Bencher) {
+	b.iter(|| {
+		let mut data: [u64; 25] = [0; 25];
+		keccakf(&mut data);
+	});
+}
