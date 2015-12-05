@@ -78,54 +78,58 @@ macro_rules! FOR5 {
 
 /// keccak-f[1600]
 pub fn keccakf(a: &mut [u64]) {
-	let mut b: [u64; 5] = [0; 5];
-	let mut t: u64;
-	let mut x: usize;
-	let mut y: usize;
+	unsafe {
+		let mut b: [u64; 5] = [0; 5];
+		let mut t: u64;
+		let mut x: usize;
+		let mut y: usize;
 
-	for i in 0..24 {
-		// Theta
-		FOR5!(x, 1, {
-			b[x] = 0;
-			FOR5!(y, 5, {
-				b[x] ^= a[x + y];
-			});
-		});
-
-		FOR5!(x, 1, {
-			FOR5!(y, 5, {
-				a[y + x] ^= b[(x + 4) % 5] ^ b[(x + 1) % 5].rotate_left(1);
-			});
-		});
-
-		// Rho and pi
-		t = a[1]; 
-		x = 0;
-		REPEAT24!({
-			b[0] = a[PI[x]];
-			a[PI[x]] = t.rotate_left(RHO[x]);
-			t = b[0];
-			x += 1;
-		});
-
-		// Chi
-		FOR5!(y, 5, {
+		for i in 0..24 {
+			// Theta
 			FOR5!(x, 1, {
-				b[x] = a[y + x];
+				*b.get_unchecked_mut(x) = 0;
+				FOR5!(y, 5, {
+					*b.get_unchecked_mut(x) ^= *a.get_unchecked(x + y);
+				});
 			});
-			FOR5!(x, 1, {
-				a[y + x] = b[x] ^ ((!b[(x + 1) % 5]) & b[(x + 2) % 5]);
-			});
-		});
 
-		// Iota
-		a[0] ^= RC[i];
+			FOR5!(x, 1, {
+				FOR5!(y, 5, {
+					*a.get_unchecked_mut(y + x) ^= *b.get_unchecked((x + 4) % 5) ^ b.get_unchecked((x + 1) % 5).rotate_left(1);
+				});
+			});
+
+			// Rho and pi
+			t = *a.get_unchecked(1); 
+			x = 0;
+			REPEAT24!({
+				*b.get_unchecked_mut(0) = *a.get_unchecked(*PI.get_unchecked(x));
+				*a.get_unchecked_mut(*PI.get_unchecked(x)) = t.rotate_left(*RHO.get_unchecked(x));
+				t = *b.get_unchecked(0);
+				x += 1;
+			});
+
+			// Chi
+			FOR5!(y, 5, {
+				FOR5!(x, 1, {
+					*b.get_unchecked_mut(x) = *a.get_unchecked(y + x);
+				});
+				FOR5!(x, 1, {
+					*a.get_unchecked_mut(y + x) = *b.get_unchecked(x) ^ ((!b.get_unchecked((x + 1) % 5)) & b.get_unchecked((x + 2) % 5));
+				});
+			});
+
+			// Iota
+			*a.get_unchecked_mut(0) ^= *RC.get_unchecked(i);
+		}
 	}
 }
 
 fn xorin(dst: &mut [u8], src: &[u8], len: usize) {
-	for i in 0..len {
-		dst[i] ^= src[i];
+	unsafe {
+		for i in 0..len {
+			*dst.get_unchecked_mut(i) ^= *src.get_unchecked(i);
+		}
 	}
 }
 
