@@ -35,7 +35,7 @@
 //! License: CC0, attribution kindly requested. Blame taken too,
 //! but not liability.
 
-const RHO: [usize; 24] = [
+const RHO: [u32; 24] = [
 	 1,  3,  6, 10, 15, 21,
 	28, 36, 45, 55,  2, 14,
 	27, 41, 56,  8, 25, 43,
@@ -57,10 +57,6 @@ const RC: [u64; 24] = [
 	0x8000000000008002u64, 0x8000000000000080u64, 0x800au64, 0x800000008000000au64,
 	0x8000000080008081u64, 0x8000000000008080u64, 0x80000001u64, 0x8000000080008008u64
 ];
-
-macro_rules! ROL {
-	($x: expr, $s: expr) => ((($x) << $s) | (($x) >> (64 - $s)))
-}
 
 macro_rules! REPEAT5 {
 	($e: expr) => ( for _ in 0..5 { $e } )
@@ -98,7 +94,7 @@ pub fn keccakf(a: &mut [u64]) {
 
 		FOR5!(x, 1, {
 			FOR5!(y, 5, {
-				a[y + x] ^= b[(x + 4) % 5] ^ ROL!(b[(x + 1) % 5], 1);
+				a[y + x] ^= b[(x + 4) % 5] ^ b[(x + 1) % 5].rotate_left(1);
 			});
 		});
 
@@ -107,8 +103,7 @@ pub fn keccakf(a: &mut [u64]) {
 		x = 0;
 		REPEAT24!({
 			b[0] = a[PI[x]];
-			let rhox = RHO[x]; // 'const_indexing' issue
-			a[PI[x]] = ROL!(t, rhox);
+			a[PI[x]] = t.rotate_left(RHO[x]);
 			t = b[0];
 			x += 1;
 		});
