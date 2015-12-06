@@ -5,3 +5,4 @@ license = "CC0-1.0"
 name = "tiny-keccak"
 version = "1.0.3"
 authors = ["debris <marek.kotewicz@gmail.com>"]
+keywords = ["sha3", "sha-3", "keccak", "crypto", "tiny"]
