@@ -59,11 +59,15 @@ const RC: [u64; 24] = [
 ];
 
 macro_rules! REPEAT5 {
-	($e: expr) => ( for _ in 0..5 { $e } )
+	($e: expr) => ( $e; $e; $e; $e; $e; )
+}
+
+macro_rules! REPEAT6 {
+	($e: expr) => ( $e; $e; $e; $e; $e; $e; )
 }
 
 macro_rules! REPEAT24 {
-	($e: expr) => ( for _ in 0..24 { $e } )
+	($e: expr) => ( REPEAT6!($e); REPEAT6!($e); REPEAT6!($e); REPEAT6!($e); )
 }
 
 macro_rules! FOR5 {
@@ -256,24 +260,22 @@ impl Keccak {
 		let mut a = as_mut_bytes_slice(&mut self.a);
 
 		let inlen = input.len();
-		let mut offset = self.offset;
-		let mut rate = self.rate - offset;
+		let mut rate = self.rate - self.offset;
 
 		//first foldp
 		let mut ip = 0;
 		let mut l = inlen;
 		while l >= rate {
-			xorin(&mut a[offset..], &input[ip..], rate);
+			xorin(&mut a[self.offset..], &input[ip..], rate);
 			keccakf(&mut self.a);
 			ip += rate;
 			l -= rate;
 			rate = self.rate;
-			offset = 0;
 			self.offset = 0;
 		}
 
 		// Xor in the last block 
-		xorin(&mut a[offset..], &input[ip..], l);
+		xorin(&mut a[self.offset..], &input[ip..], l);
 		self.offset += l;
 	}
 
@@ -282,8 +284,11 @@ impl Keccak {
 
 		let offset = self.offset;
 		let rate = self.rate;
-		a[offset] ^= self.delim;
-		a[rate - 1] ^= 0x80;
+
+		unsafe {
+			*a.get_unchecked_mut(offset) ^= self.delim;
+			*a.get_unchecked_mut(rate - 1) ^= 0x80;
+		}
 	}
 
 	// squeeze output
