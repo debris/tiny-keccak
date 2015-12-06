@@ -58,6 +58,10 @@ const RC: [u64; 24] = [
 	0x8000000080008081u64, 0x8000000000008080u64, 0x80000001u64, 0x8000000080008008u64
 ];
 
+macro_rules! REPEAT4 {
+	($e: expr) => ( $e; $e; $e; $e; )
+}
+
 macro_rules! REPEAT5 {
 	($e: expr) => ( $e; $e; $e; $e; $e; )
 }
@@ -67,16 +71,23 @@ macro_rules! REPEAT6 {
 }
 
 macro_rules! REPEAT24 {
-	($e: expr) => ( REPEAT6!($e); REPEAT6!($e); REPEAT6!($e); REPEAT6!($e); )
+	($e: expr, $s: expr) => ( 
+		REPEAT6!({ $e; $s; }); 
+		REPEAT6!({ $e; $s; }); 
+		REPEAT6!({ $e; $s; }); 
+		REPEAT5!({ $e; $s; }); 
+		$e;
+	)
 }
 
 macro_rules! FOR5 {
 	($v: expr, $s: expr, $e: expr) => { 
 		$v = 0; 
-		REPEAT5!({
+		REPEAT4!({
 			$e;
 			$v += $s;
 		});
+		$e;
 	}
 }
 
@@ -109,6 +120,7 @@ pub fn keccakf(a: &mut [u64]) {
 			REPEAT24!({
 				*b.get_unchecked_mut(0) = *a.get_unchecked(*PI.get_unchecked(x));
 				*a.get_unchecked_mut(*PI.get_unchecked(x)) = t.rotate_left(*RHO.get_unchecked(x));
+			}, {
 				t = *b.get_unchecked(0);
 				x += 1;
 			});
