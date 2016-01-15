@@ -3,10 +3,18 @@ description = "An implementation of the FIPS-202-defined SHA-3 and SHAKE functio
 homepage = "https://github.com/debris/tiny-keccak"
 license = "CC0-1.0"
 name = "tiny-keccak"
-version = "1.0.4"
+version = "1.0.5"
 authors = ["debris <marek.kotewicz@gmail.com>"]
 keywords = ["sha3", "sha-3", "keccak", "crypto", "tiny"]
 
 [profile.dev]
+opt-level = 3  # Controls the --opt-level the compiler builds with
+debug = false   # Controls whether the compiler passes `-g`
+
+[profile.doc]
+opt-level = 3  # Controls the --opt-level the compiler builds with
+debug = false   # Controls whether the compiler passes `-g`
+
+[profile.test]
 opt-level = 3  # Controls the --opt-level the compiler builds with
 debug = false   # Controls whether the compiler passes `-g`
