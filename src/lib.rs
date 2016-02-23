@@ -15,7 +15,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! tiny-keccak = "0.1"
+//! tiny-keccak = "1.0"
 //! ```
 //!
 //! and this to your crate root:
