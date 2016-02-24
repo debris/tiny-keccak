@@ -2,6 +2,13 @@
 
 An implementation of the FIPS-202-defined SHA-3 and SHAKE functions.
 
+[![Build Status][travis-image]][travis-url]
+
+[travis-image]: https://travis-ci.org/debris/tiny-keccak.svg?branch=master
+[travis-url]: https://travis-ci.org/debris/tiny-keccak
+
+[Documentation](http://debris.github.io/tiny-keccak/tiny_keccak/index.html)
+
 The `Keccak-f[1600]` permutation is fully unrolled; it's nearly as fast
 as the Keccak team's optimized permutation.
 
