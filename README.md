@@ -1,4 +1,4 @@
-# libkeccak-tiny
+# tiny-keccak
 
 An implementation of the FIPS-202-defined SHA-3 and SHAKE functions.
 
