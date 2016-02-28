@@ -13,7 +13,7 @@ use tiny_keccak::*;
 use test::Bencher;
 
 #[bench]
-fn bench_sha3_256(b: &mut Bencher) {
+fn bench_sha3_256_input_4096_bytes(b: &mut Bencher) {
     let data = vec![254u8; 4096];
     b.bytes = data.len() as u64;
 
