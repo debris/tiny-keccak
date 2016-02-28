@@ -14,19 +14,24 @@ use test::Bencher;
 
 #[bench]
 fn bench_sha3_256(b: &mut Bencher) {
-	let data: Vec<u8> = From::from("hello");
-	b.iter(|| {
-		let mut res: [u8; 32] = [0; 32];
-		let mut keccak = Keccak::new_sha3_256();
-		keccak.update(&data);
-		keccak.finalize(&mut res);
-	});
+    let data = vec![254u8; 4096];
+    b.bytes = data.len() as u64;
+
+    b.iter(|| {
+        let mut res: [u8; 32] = [0; 32];
+        let mut keccak = Keccak::new_sha3_256();
+        keccak.update(&data);
+        keccak.finalize(&mut res);
+    });
 }
 
 #[bench]
 fn keccakf_u64(b: &mut Bencher) {
-	b.iter(|| {
-		let mut data: [u64; 25] = [0; 25];
-		keccakf(&mut data);
-	});
+    const BYTES: usize = 25;
+    b.bytes = BYTES as u64;
+
+    b.iter(|| {
+        let mut data = [0u64; BYTES];
+        keccakf(&mut data);
+    });
 }
