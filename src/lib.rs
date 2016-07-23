@@ -257,7 +257,12 @@ impl Keccak {
         self.absorb(input);
     }
 
-    pub fn finalize(&mut self, output: &mut [u8]) {
+    #[inline]
+    pub fn keccakf(&mut self) {
+        keccakf(&mut self.a);
+    }
+
+    pub fn finalize(mut self, output: &mut [u8]) {
         self.pad();
 
         // apply keccakf
@@ -330,7 +335,7 @@ mod tests {
 
     #[test]
     fn empty_keccak() {
-        let mut keccak = Keccak::new_keccak256();
+        let keccak = Keccak::new_keccak256();
         let mut res: [u8; 32] = [0; 32];
         keccak.finalize(&mut res);
 
@@ -347,7 +352,7 @@ mod tests {
 
     #[test]
     fn empty_sha3_256() {
-        let mut sha3 = Keccak::new_sha3_256();
+        let sha3 = Keccak::new_sha3_256();
         let mut res: [u8; 32] = [0; 32];
         sha3.finalize(&mut res);
 
