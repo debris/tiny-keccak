@@ -248,6 +248,11 @@ impl Keccak {
         self.absorb(input);
     }
 
+    #[inline]
+    pub fn keccakf(&mut self) {
+        keccakf(&mut self.a);
+    }
+
     pub fn finalize(mut self, output: &mut [u8]) {
         self.pad();
 
@@ -259,7 +264,7 @@ impl Keccak {
     }
 
     // Absorb input
-    fn absorb(&mut self, input: &[u8]) {
+    pub fn absorb(&mut self, input: &[u8]) {
         let mut a = as_mut_bytes_slice(&mut self.a);
 
         let inlen = input.len();
@@ -282,7 +287,7 @@ impl Keccak {
         self.offset += l;
     }
 
-    fn pad(&mut self) {
+    pub fn pad(&mut self) {
         let mut a = as_mut_bytes_slice(&mut self.a);
 
         let offset = self.offset;
@@ -295,7 +300,7 @@ impl Keccak {
     }
 
     // squeeze output
-    fn squeeze(&mut self, output: &mut [u8]) {
+    pub fn squeeze(&mut self, output: &mut [u8]) {
         let a = as_bytes_slice(&mut self.a);
 
         let outlen = output.len();
