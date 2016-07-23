@@ -150,9 +150,7 @@ fn xorin(dst: &mut [u8], src: &[u8], len: usize) {
 }
 
 fn setout(src: &[u8], dst: &mut [u8], len: usize) {
-    unsafe {
-        ::std::ptr::copy(src.as_ptr(), dst.as_mut_ptr(), len);
-    }
+    dst[..len].copy_from_slice(&src[..len]);
 }
 
 /// Total number of lanes.
@@ -210,17 +208,10 @@ pub struct Keccak {
 
 impl Clone for Keccak {
     fn clone(&self) -> Self {
-        use std::mem;
-        use std::ptr;
-
-        unsafe {
-            let mut res: Keccak = mem::uninitialized();
-            ptr::copy(self.a.as_ptr(), res.a.as_mut_ptr(), self.a.len());
-            res.offset = self.offset;
-            res.rate = self.rate;
-            res.delim = self.delim;
-            res
-        }
+        let mut res = Keccak::new(self.rate, self.delim);
+        res.a.copy_from_slice(&self.a);
+        res.offset = self.offset;
+        res
     }
 }
 
