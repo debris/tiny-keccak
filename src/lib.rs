@@ -37,28 +37,36 @@
 
 #![no_std]
 
-const RHO: [u32; 24] = [
-     1,  3,  6, 10, 15, 21,
-    28, 36, 45, 55,  2, 14,
-    27, 41, 56,  8, 25, 43,
-    62, 18, 39, 61, 20, 44
-];
+const RHO: [u32; 24] = [1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18,
+                        39, 61, 20, 44];
 
-const PI: [usize; 24] = [
-    10,  7, 11, 17, 18, 3,
-     5, 16,  8, 21, 24, 4,
-    15, 23, 19, 13, 12, 2,
-    20, 14, 22,  9,  6, 1
-];
+const PI: [usize; 24] = [10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14,
+                         22, 9, 6, 1];
 
-const RC: [u64; 24] = [
-    1u64, 0x8082u64, 0x800000000000808au64, 0x8000000080008000u64,
-    0x808bu64, 0x80000001u64, 0x8000000080008081u64, 0x8000000000008009u64,
-    0x8au64, 0x88u64, 0x80008009u64, 0x8000000au64,
-    0x8000808bu64, 0x800000000000008bu64, 0x8000000000008089u64, 0x8000000000008003u64,
-    0x8000000000008002u64, 0x8000000000000080u64, 0x800au64, 0x800000008000000au64,
-    0x8000000080008081u64, 0x8000000000008080u64, 0x80000001u64, 0x8000000080008008u64
-];
+const RC: [u64; 24] = [1u64,
+                       0x8082u64,
+                       0x800000000000808au64,
+                       0x8000000080008000u64,
+                       0x808bu64,
+                       0x80000001u64,
+                       0x8000000080008081u64,
+                       0x8000000000008009u64,
+                       0x8au64,
+                       0x88u64,
+                       0x80008009u64,
+                       0x8000000au64,
+                       0x8000808bu64,
+                       0x800000000000008bu64,
+                       0x8000000000008089u64,
+                       0x8000000000008003u64,
+                       0x8000000000008002u64,
+                       0x8000000000000080u64,
+                       0x800au64,
+                       0x800000008000000au64,
+                       0x8000000080008081u64,
+                       0x8000000000008080u64,
+                       0x80000001u64,
+                       0x8000000080008008u64];
 
 macro_rules! REPEAT4 {
     ($e: expr) => ( $e; $e; $e; $e; )
@@ -119,12 +127,13 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
         t = a[1];
         x = 0;
         REPEAT24!({
-            b[0] = a[PI[x]];
-            a[PI[x]] = t.rotate_left(RHO[x]);
-        }, {
-            t = b[0];
-            x += 1;
-        });
+                      b[0] = a[PI[x]];
+                      a[PI[x]] = t.rotate_left(RHO[x]);
+                  },
+                  {
+                      t = b[0];
+                      x += 1;
+                  });
 
         // Chi
         FOR5!(y, 5, {
@@ -158,16 +167,12 @@ const PLEN: usize = 25;
 
 /// Lets cheat borrow checker.
 fn as_bytes_slice<'a, 'b>(ints: &'a [u64]) -> &'b [u8] {
-    unsafe {
-        ::core::slice::from_raw_parts(ints.as_ptr() as *mut u8, ints.len() * 8)
-    }
+    unsafe { ::core::slice::from_raw_parts(ints.as_ptr() as *mut u8, ints.len() * 8) }
 }
 
 /// Lets cheat borrow checker... again.
 fn as_mut_bytes_slice<'a, 'b>(ints: &'a mut [u64]) -> &'b mut [u8] {
-    unsafe {
-        ::core::slice::from_raw_parts_mut(ints.as_mut_ptr() as *mut u8, ints.len() * 8)
-    }
+    unsafe { ::core::slice::from_raw_parts_mut(ints.as_mut_ptr() as *mut u8, ints.len() * 8) }
 }
 
 /// This structure should be used to create keccak/sha3 hash.
@@ -203,7 +208,7 @@ pub struct Keccak {
     a: [u64; PLEN],
     offset: usize,
     rate: usize,
-    delim: u8
+    delim: u8,
 }
 
 impl Clone for Keccak {
@@ -229,20 +234,20 @@ impl Keccak {
             a: [0; PLEN],
             offset: 0,
             rate: rate,
-            delim: delim
+            delim: delim,
         }
     }
 
-    impl_constructor!(new_shake128,  128, 0x1f);
-    impl_constructor!(new_shake256,  256, 0x1f);
+    impl_constructor!(new_shake128, 128, 0x1f);
+    impl_constructor!(new_shake256, 256, 0x1f);
     impl_constructor!(new_keccak224, 224, 0x01);
     impl_constructor!(new_keccak256, 256, 0x01);
     impl_constructor!(new_keccak384, 384, 0x01);
     impl_constructor!(new_keccak512, 512, 0x01);
-    impl_constructor!(new_sha3_224,  224, 0x06);
-    impl_constructor!(new_sha3_256,  256, 0x06);
-    impl_constructor!(new_sha3_384,  384, 0x06);
-    impl_constructor!(new_sha3_512,  512, 0x06);
+    impl_constructor!(new_sha3_224, 224, 0x06);
+    impl_constructor!(new_sha3_256, 256, 0x06);
+    impl_constructor!(new_sha3_384, 384, 0x06);
+    impl_constructor!(new_sha3_512, 512, 0x06);
 
     pub fn update(&mut self, input: &[u8]) {
         self.absorb(input);
@@ -270,7 +275,7 @@ impl Keccak {
         let inlen = input.len();
         let mut rate = self.rate - self.offset;
 
-        //first foldp
+        // first foldp
         let mut ip = 0;
         let mut l = inlen;
         while l >= rate {
@@ -318,4 +323,38 @@ impl Keccak {
 
         setout(&a, &mut output[op..], l);
     }
+}
+
+/// Simple wrapper around tiny-keccak
+pub fn sha3_224(data: &[u8]) -> [u8; 28] {
+    let mut sha3 = Keccak::new_sha3_224();
+    sha3.update(data);
+    let mut res = [0u8; 28];
+    sha3.finalize(&mut res);
+    res
+}
+/// Simple wrapper around tiny-keccak
+pub fn sha3_256(data: &[u8]) -> [u8; 32] {
+    let mut sha3 = Keccak::new_sha3_256();
+    sha3.update(data);
+    let mut res = [0u8; 32];
+    sha3.finalize(&mut res);
+    res
+}
+/// Simple wrapper around tiny-keccak
+pub fn sha3_384(data: &[u8]) -> [u8; 48] {
+    let mut sha3 = Keccak::new_sha3_384();
+    sha3.update(data);
+    let mut res = [0u8; 48];
+    sha3.finalize(&mut res);
+    res
+}
+
+/// Simple wrapper around tiny-keccak
+pub fn sha3_512(data: &[u8]) -> [u8; 64] {
+    let mut sha3 = Keccak::new_sha3_512();
+    sha3.update(data);
+    let mut res = [0u8; 64];
+    sha3.finalize(&mut res);
+    res
 }
