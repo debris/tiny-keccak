@@ -202,12 +202,40 @@ impl Clone for Keccak {
 }
 
 macro_rules! impl_constructor {
-    ($name: ident, $bits: expr, $delim: expr) => {
+    ($name: ident, $alias: ident, $bits: expr, $delim: expr) => {
         pub fn $name() -> Keccak {
             Keccak::new(200 - $bits/4, $delim)
         }
+
+        pub fn $alias(data: &[u8], result: &mut [u8]) {
+            let mut keccak = Keccak::$name();
+            keccak.update(data);
+            keccak.finalize(result);
+
+        }
     }
 }
+
+macro_rules! impl_global_alias {
+    ($alias: ident, $size: expr) => {
+        pub fn $alias(data: &[u8]) -> [u8; $size / 8] {
+            let mut result = [0u8; $size / 8];
+            Keccak::$alias(data, &mut result);
+            result
+        }
+    }
+}
+
+impl_global_alias!(shake128,  128);
+impl_global_alias!(shake256,  256);
+impl_global_alias!(keccak224, 224);
+impl_global_alias!(keccak256, 256);
+impl_global_alias!(keccak384, 384);
+impl_global_alias!(keccak512, 512);
+impl_global_alias!(sha3_224,  224);
+impl_global_alias!(sha3_256,  256);
+impl_global_alias!(sha3_384,  384);
+impl_global_alias!(sha3_512,  512);
 
 impl Keccak {
     fn new(rate: usize, delim: u8) -> Keccak {
@@ -233,16 +261,16 @@ impl Keccak {
         }
     }
 
-    impl_constructor!(new_shake128,  128, 0x1f);
-    impl_constructor!(new_shake256,  256, 0x1f);
-    impl_constructor!(new_keccak224, 224, 0x01);
-    impl_constructor!(new_keccak256, 256, 0x01);
-    impl_constructor!(new_keccak384, 384, 0x01);
-    impl_constructor!(new_keccak512, 512, 0x01);
-    impl_constructor!(new_sha3_224,  224, 0x06);
-    impl_constructor!(new_sha3_256,  256, 0x06);
-    impl_constructor!(new_sha3_384,  384, 0x06);
-    impl_constructor!(new_sha3_512,  512, 0x06);
+    impl_constructor!(new_shake128,  shake128,  128, 0x1f);
+    impl_constructor!(new_shake256,  shake256,  256, 0x1f);
+    impl_constructor!(new_keccak224, keccak224, 224, 0x01);
+    impl_constructor!(new_keccak256, keccak256, 256, 0x01);
+    impl_constructor!(new_keccak384, keccak384, 384, 0x01);
+    impl_constructor!(new_keccak512, keccak512, 512, 0x01);
+    impl_constructor!(new_sha3_224,  sha3_224,  224, 0x06);
+    impl_constructor!(new_sha3_256,  sha3_256,  256, 0x06);
+    impl_constructor!(new_sha3_384,  sha3_384,  384, 0x06);
+    impl_constructor!(new_sha3_512,  sha3_512,  512, 0x06);
 
     pub fn update(&mut self, input: &[u8]) {
         self.absorb(input);
