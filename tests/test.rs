@@ -1,10 +1,8 @@
 extern crate tiny_keccak;
 
-use tiny_keccak::*;
-
 #[test]
 fn empty_keccak() {
-    let keccak = Keccak::new_keccak256();
+    let keccak = tiny_keccak::new_keccak256();
     let mut res: [u8; 32] = [0; 32];
     keccak.finalize(&mut res);
 
@@ -21,7 +19,7 @@ fn empty_keccak() {
 
 #[test]
 fn empty_sha3_256() {
-    let sha3 = Keccak::new_sha3_256();
+    let sha3 = tiny_keccak::new_sha3_256();
     let mut res: [u8; 32] = [0; 32];
     sha3.finalize(&mut res);
 
@@ -38,7 +36,7 @@ fn empty_sha3_256() {
 
 #[test]
 fn string_sha3_256() {
-    let mut sha3 = Keccak::new_sha3_256();
+    let mut sha3 = tiny_keccak::new_sha3_256();
     let data: Vec<u8> = From::from("hello");
     sha3.update(&data);
 
@@ -58,7 +56,7 @@ fn string_sha3_256() {
 
 #[test]
 fn string_sha3_256_parts() {
-    let mut sha3 = Keccak::new_sha3_256();
+    let mut sha3 = tiny_keccak::new_sha3_256();
     let data: Vec<u8> = From::from("hell");
     sha3.update(&data);
     sha3.update(&[b'o']);
@@ -79,7 +77,7 @@ fn string_sha3_256_parts() {
 
 #[test]
 fn string_sha3_256_parts5() {
-    let mut sha3 = Keccak::new_sha3_256();
+    let mut sha3 = tiny_keccak::new_sha3_256();
     sha3.update(&[b'h']);
     sha3.update(&[b'e']);
     sha3.update(&[b'l']);
@@ -102,7 +100,7 @@ fn string_sha3_256_parts5() {
 
 #[test]
 fn long_string_sha3_512() {
-    let mut sha3 = Keccak::new_sha3_512();
+    let mut sha3 = tiny_keccak::new_sha3_512();
     let data: Vec<u8> = From::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
     sha3.update(&data);
@@ -128,7 +126,7 @@ fn long_string_sha3_512() {
 
 #[test]
 fn long_string_sha3_512_parts() {
-    let mut sha3 = Keccak::new_sha3_512();
+    let mut sha3 = tiny_keccak::new_sha3_512();
     let data: Vec<u8> = From::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ");
     let data2: Vec<u8> = From::from("ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
