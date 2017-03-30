@@ -7,6 +7,9 @@ version = "1.2.0"
 authors = ["debris <marek.kotewicz@gmail.com>"]
 keywords = ["sha3", "sha-3", "keccak", "crypto", "tiny"]
 
+[dependencies]
+typenum = "1.7.0"
+
 [profile.dev]
 opt-level = 3  # Controls the --opt-level the compiler builds with
 debug = false   # Controls whether the compiler passes `-g`

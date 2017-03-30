@@ -1,8 +1,7 @@
 extern crate tiny_keccak;
-use tiny_keccak::Keccak;
 
 fn main() {
-    let mut sha3 = Keccak::new_sha3_256();
+    let mut sha3 = tiny_keccak::new_sha3_256();
     let data: Vec<u8> = From::from("hello");
     let data2: Vec<u8> = From::from("world");
 

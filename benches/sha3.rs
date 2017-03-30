@@ -8,7 +8,7 @@
 extern crate test;
 extern crate tiny_keccak;
 
-use tiny_keccak::*;
+use tiny_keccak::keccakf;
 
 use test::Bencher;
 
@@ -19,7 +19,7 @@ fn bench_sha3_256_input_4096_bytes(b: &mut Bencher) {
 
     b.iter(|| {
         let mut res: [u8; 32] = [0; 32];
-        let mut keccak = Keccak::new_sha3_256();
+        let mut keccak = tiny_keccak::new_sha3_256();
         keccak.update(&data);
         keccak.finalize(&mut res);
     });

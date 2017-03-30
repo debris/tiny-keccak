@@ -37,6 +37,11 @@
 
 #![no_std]
 
+use typenum::uint::Unsigned;
+use typenum::consts;
+
+extern crate typenum;
+
 const RHO: [u32; 24] = [
      1,  3,  6, 10, 15, 21,
     28, 36, 45, 55,  2, 14,
@@ -141,43 +146,16 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
     }
 }
 
-fn xorin(dst: &mut [u8], src: &[u8], len: usize) {
-    unsafe {
-        for i in 0..len {
-            *dst.get_unchecked_mut(i) ^= *src.get_unchecked(i);
-        }
-    }
-}
-
-fn setout(src: &[u8], dst: &mut [u8], len: usize) {
-    dst[..len].copy_from_slice(&src[..len]);
-}
-
 /// Total number of lanes.
 const PLEN: usize = 25;
-
-/// Lets cheat borrow checker.
-fn as_bytes_slice<'a, 'b>(ints: &'a [u64]) -> &'b [u8] {
-    unsafe {
-        ::core::slice::from_raw_parts(ints.as_ptr() as *mut u8, ints.len() * 8)
-    }
-}
-
-/// Lets cheat borrow checker... again.
-fn as_mut_bytes_slice<'a, 'b>(ints: &'a mut [u64]) -> &'b mut [u8] {
-    unsafe {
-        ::core::slice::from_raw_parts_mut(ints.as_mut_ptr() as *mut u8, ints.len() * 8)
-    }
-}
 
 /// This structure should be used to create keccak/sha3 hash.
 ///
 /// ```rust
 /// extern crate tiny_keccak;
-/// use tiny_keccak::Keccak;
 ///
 /// fn main() {
-///     let mut sha3 = Keccak::new_sha3_256();
+///     let mut sha3 = tiny_keccak::new_sha3_256();
 ///     let data: Vec<u8> = From::from("hello");
 ///     let data2: Vec<u8> = From::from("world");
 ///
@@ -199,78 +177,80 @@ fn as_mut_bytes_slice<'a, 'b>(ints: &'a mut [u64]) -> &'b mut [u8] {
 ///     assert_eq!(&res, ref_ex);
 /// }
 /// ```
-pub struct Keccak {
+pub struct Keccak<Rate: Unsigned> {
     a: [u64; PLEN],
     offset: usize,
-    rate: usize,
-    delim: u8
+    delim: u8,
+    _marker: ::core::marker::PhantomData<Rate>,
 }
 
-impl Clone for Keccak {
+impl<Rate: Unsigned> Clone for Keccak<Rate> {
     fn clone(&self) -> Self {
-        let mut res = Keccak::new(self.rate, self.delim);
+        let mut res = Keccak::new(self.delim);
         res.a.copy_from_slice(&self.a);
         res.offset = self.offset;
         res
     }
 }
 
-macro_rules! impl_constructor {
-    ($name: ident, $alias: ident, $bits: expr, $delim: expr) => {
-        pub fn $name() -> Keccak {
-            Keccak::new(200 - $bits/4, $delim)
+macro_rules! impl_variant {
+    ($name: ident, $alias: ident, $into: ident, $rate: ty, $delim: expr, $size: expr) => {
+        /// Create a `$alias` digest.
+        pub fn $name() -> Keccak<$rate> {
+            Keccak::new($delim)
         }
 
-        pub fn $alias(data: &[u8], result: &mut [u8]) {
-            let mut keccak = Keccak::$name();
+        /// Apply the `$alias` function, writing the result into the `result` buffer.
+        /// Truncates if necessary.
+        pub fn $into(data: &[u8], result: &mut [u8]) {
+            let mut keccak = $name();
             keccak.update(data);
             keccak.finalize(result);
-
         }
-    }
-}
 
-macro_rules! impl_global_alias {
-    ($alias: ident, $size: expr) => {
+        /// Apply the `$alias` function, writing the result into
+        /// the returned byte array.
         pub fn $alias(data: &[u8]) -> [u8; $size / 8] {
             let mut result = [0u8; $size / 8];
-            Keccak::$alias(data, &mut result);
+            $into(data, &mut result);
             result
         }
-    }
+    };
 }
 
-impl_global_alias!(shake128,  128);
-impl_global_alias!(shake256,  256);
-impl_global_alias!(keccak224, 224);
-impl_global_alias!(keccak256, 256);
-impl_global_alias!(keccak384, 384);
-impl_global_alias!(keccak512, 512);
-impl_global_alias!(sha3_224,  224);
-impl_global_alias!(sha3_256,  256);
-impl_global_alias!(sha3_384,  384);
-impl_global_alias!(sha3_512,  512);
+// rate = 200 - bits/4;
+impl_variant!(new_shake128,  shake128,  shake128_into,  consts::U168, 0x1f, 128);
+impl_variant!(new_shake256,  shake256,  shake256_into,  consts::U136, 0x1f, 256);
+impl_variant!(new_keccak224, keccak224, keccak224_into, consts::U144, 0x01, 224);
+impl_variant!(new_keccak256, keccak256, keccak256_into, consts::U136, 0x01, 256);
+impl_variant!(new_keccak384, keccak384, keccak384_into, consts::U104, 0x01, 384);
+impl_variant!(new_keccak512, keccak512, keccak512_into, consts::U72,  0x01, 512);
+impl_variant!(new_sha3_224,  sha3_224,  sha3_224_into,  consts::U144, 0x06, 224);
+impl_variant!(new_sha3_256,  sha3_256,  sha3_256_into,  consts::U136, 0x06, 256);
+impl_variant!(new_sha3_384,  sha3_384,  sha3_384_into,  consts::U104, 0x06, 384);
+impl_variant!(new_sha3_512,  sha3_512,  sha3_512_into,  consts::U72,  0x06, 512);
 
-impl Keccak {
-    fn new(rate: usize, delim: u8) -> Keccak {
+impl<Rate: Unsigned> Keccak<Rate> {
+    fn new(delim: u8) -> Self {
+        if Rate::to_usize() > PLEN * 8 {
+            panic!("Rate {} longer than sponge length of {}", Rate::to_usize(), PLEN * 8);
+        }
+
         Keccak {
-            a: [0; PLEN],
+            a: [0u64; PLEN],
             offset: 0,
-            rate: rate,
-            delim: delim
+            delim: delim,
+            _marker: ::core::marker::PhantomData,
         }
     }
 
-    impl_constructor!(new_shake128,  shake128,  128, 0x1f);
-    impl_constructor!(new_shake256,  shake256,  256, 0x1f);
-    impl_constructor!(new_keccak224, keccak224, 224, 0x01);
-    impl_constructor!(new_keccak256, keccak256, 256, 0x01);
-    impl_constructor!(new_keccak384, keccak384, 384, 0x01);
-    impl_constructor!(new_keccak512, keccak512, 512, 0x01);
-    impl_constructor!(new_sha3_224,  sha3_224,  224, 0x06);
-    impl_constructor!(new_sha3_256,  sha3_256,  256, 0x06);
-    impl_constructor!(new_sha3_384,  sha3_384,  384, 0x06);
-    impl_constructor!(new_sha3_512,  sha3_512,  512, 0x06);
+    fn a_bytes(&self) -> &[u8; PLEN * 8] {
+        unsafe { ::core::mem::transmute(&self.a) }
+    }
+
+    fn a_bytes_mut(&mut self) -> &mut [u8; PLEN * 8] {
+        unsafe { ::core::mem::transmute(&mut self.a) }
+    }
 
     pub fn update(&mut self, input: &[u8]) {
         self.absorb(input);
@@ -293,57 +273,63 @@ impl Keccak {
 
     // Absorb input
     pub fn absorb(&mut self, input: &[u8]) {
-        let mut a = as_mut_bytes_slice(&mut self.a);
+        fn xorin(dst: &mut [u8], src: &[u8]) {
+            for (d, i) in dst.iter_mut().zip(src) {
+                *d ^= *i;
+            }
+        }
 
         let inlen = input.len();
-        let mut rate = self.rate - self.offset;
+        let mut rate = Rate::to_usize() - self.offset;
 
         //first foldp
         let mut ip = 0;
         let mut l = inlen;
         while l >= rate {
-            xorin(&mut a[self.offset..], &input[ip..], rate);
+            let offset = self.offset;
+            xorin(&mut self.a_bytes_mut()[offset..][..rate], &input[ip..]);
             keccakf(&mut self.a);
             ip += rate;
             l -= rate;
-            rate = self.rate;
+            rate = Rate::to_usize();
             self.offset = 0;
         }
 
         // Xor in the last block
-        xorin(&mut a[self.offset..], &input[ip..], l);
+        let offset = self.offset;
+        xorin(&mut self.a_bytes_mut()[offset..][..l], &input[ip..]);
         self.offset += l;
     }
 
     pub fn pad(&mut self) {
-        let mut a = as_mut_bytes_slice(&mut self.a);
-
         let offset = self.offset;
-        let rate = self.rate;
+        let rate = Rate::to_usize();
 
-        unsafe {
-            *a.get_unchecked_mut(offset) ^= self.delim;
-            *a.get_unchecked_mut(rate - 1) ^= 0x80;
-        }
+        let delim = self.delim;
+        let a = self.a_bytes_mut();
+        a[offset] ^= delim;
+        a[rate - 1] ^= 0x80;
     }
 
     // squeeze output
     pub fn squeeze(&mut self, output: &mut [u8]) {
-        let a = as_bytes_slice(&mut self.a);
+        fn setout(src: &[u8], dst: &mut [u8], len: usize) {
+            dst[..len].copy_from_slice(&src[..len]);
+        }
 
         let outlen = output.len();
-        let rate = self.rate;
+        let rate = Rate::to_usize();
 
         // second foldp
         let mut op = 0;
         let mut l = outlen;
         while l >= rate {
-            setout(&a, &mut output[op..], rate);
+            setout(self.a_bytes(), &mut output[op..], rate);
             keccakf(&mut self.a);
             op += rate;
             l -= rate;
         }
 
-        setout(&a, &mut output[op..], l);
+        setout(self.a_bytes(), &mut output[op..], l);
     }
 }
