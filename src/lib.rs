@@ -142,10 +142,11 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
 }
 
 fn xorin(dst: &mut [u8], src: &[u8], len: usize) {
-    unsafe {
-        for i in 0..len {
-            *dst.get_unchecked_mut(i) ^= *src.get_unchecked(i);
-        }
+    // elide bounds checks; see Rust commit 6a7bc47
+    let dst = &mut dst[..len];
+    let src = &src[..len];
+    for i in 0..len {
+        dst[i] ^= src[i];
     }
 }
 
