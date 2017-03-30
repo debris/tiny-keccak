@@ -146,16 +146,6 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
     }
 }
 
-fn xorin(dst: &mut [u8], src: &[u8], len: usize) {
-    for i in 0..len {
-        dst[i] ^= src[i];
-    }
-}
-
-fn setout(src: &[u8], dst: &mut [u8], len: usize) {
-    dst[..len].copy_from_slice(&src[..len]);
-}
-
 /// Total number of lanes.
 const PLEN: usize = 25;
 
@@ -242,6 +232,10 @@ impl_variant!(new_sha3_512,  sha3_512,  sha3_512_into,  consts::U72,  0x06, 512)
 
 impl<Rate: Unsigned> Keccak<Rate> {
     fn new(delim: u8) -> Self {
+        if Rate::to_usize() > PLEN * 8 {
+            panic!("Rate {} longer than sponge length of {}", Rate::to_usize(), PLEN * 8);
+        }
+
         Keccak {
             a: [0u64; PLEN],
             offset: 0,
@@ -279,6 +273,12 @@ impl<Rate: Unsigned> Keccak<Rate> {
 
     // Absorb input
     pub fn absorb(&mut self, input: &[u8]) {
+        fn xorin(dst: &mut [u8], src: &[u8]) {
+            for (d, i) in dst.iter_mut().zip(src) {
+                *d ^= *i;
+            }
+        }
+
         let inlen = input.len();
         let mut rate = Rate::to_usize() - self.offset;
 
@@ -287,7 +287,7 @@ impl<Rate: Unsigned> Keccak<Rate> {
         let mut l = inlen;
         while l >= rate {
             let offset = self.offset;
-            xorin(&mut self.a_bytes_mut()[offset..], &input[ip..], rate);
+            xorin(&mut self.a_bytes_mut()[offset..][..rate], &input[ip..]);
             keccakf(&mut self.a);
             ip += rate;
             l -= rate;
@@ -297,7 +297,7 @@ impl<Rate: Unsigned> Keccak<Rate> {
 
         // Xor in the last block
         let offset = self.offset;
-        xorin(&mut self.a_bytes_mut()[offset..], &input[ip..], l);
+        xorin(&mut self.a_bytes_mut()[offset..][..l], &input[ip..]);
         self.offset += l;
     }
 
@@ -313,6 +313,10 @@ impl<Rate: Unsigned> Keccak<Rate> {
 
     // squeeze output
     pub fn squeeze(&mut self, output: &mut [u8]) {
+        fn setout(src: &[u8], dst: &mut [u8], len: usize) {
+            dst[..len].copy_from_slice(&src[..len]);
+        }
+
         let outlen = output.len();
         let rate = Rate::to_usize();
 
