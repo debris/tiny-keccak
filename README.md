@@ -64,7 +64,7 @@ fn main() {
 
 ## Benchmarks
 
-Benchmarked with [rust-crypto](https://github.com/DaGenix/rust-crypto) sha3 on:
+Benchmarked with [rust-crypto](https://github.com/RustCrypto) sha3 on:
 
 ```
 MacBook Pro (Retina, 15-inch, Mid 2015)
@@ -77,10 +77,10 @@ Benchmark code is available [here](https://github.com/debris/tiny-keccak/blob/ma
 
 ```
 running 4 tests
-test rust_crypto_sha3_256_input_32_bytes   ... bench:       1,538 ns/iter (+/- 180) = 20 MB/s
-test rust_crypto_sha3_256_input_4096_bytes ... bench:      47,135 ns/iter (+/- 8,707) = 86 MB/s
-test tiny_keccak_sha3_256_input_32_bytes   ... bench:         698 ns/iter (+/- 113) = 45 MB/s
-test tiny_keccak_sha3_256_input_4096_bytes ... bench:      20,772 ns/iter (+/- 2,692) = 197 MB/s
+test rust_crypto_sha3_256_input_32_bytes   ... bench:         677 ns/iter (+/- 113) = 47 MB/s
+test rust_crypto_sha3_256_input_4096_bytes ... bench:      17,619 ns/iter (+/- 4,174) = 232 MB/s
+test tiny_keccak_sha3_256_input_32_bytes   ... bench:         569 ns/iter (+/- 204) = 56 MB/s
+test tiny_keccak_sha3_256_input_4096_bytes ... bench:      17,185 ns/iter (+/- 4,575) = 238 MB/s
 ```
 
 Why tiny-keccak is twice faster? It's optimized with:
