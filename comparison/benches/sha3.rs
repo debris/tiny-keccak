@@ -1,15 +1,10 @@
-//! should be started with:
-//! ```bash
-//! multirust run nightly cargo bench
-//! ```
-
 #![feature(test)]
 
 extern crate test;
 extern crate tiny_keccak;
-extern crate crypto;
+extern crate sha3;
 
-use crypto::digest::Digest;
+use sha3::{Sha3_256, Digest};
 
 use test::Bencher;
 
@@ -45,10 +40,9 @@ fn rust_crypto_sha3_256_input_32_bytes(b: &mut Bencher) {
     b.bytes = data.len() as u64;
 
     b.iter(|| {
-        let mut res: [u8; 32] = [0; 32];
-        let mut keccak = crypto::sha3::Sha3::sha3_256();
+        let mut keccak = Sha3_256::default();
         keccak.input(&data);
-        keccak.result(&mut res);
+        keccak.result();
     });
 }
 
@@ -58,9 +52,8 @@ fn rust_crypto_sha3_256_input_4096_bytes(b: &mut Bencher) {
     b.bytes = data.len() as u64;
 
     b.iter(|| {
-        let mut res: [u8; 32] = [0; 32];
-        let mut keccak = crypto::sha3::Sha3::sha3_256();
+        let mut keccak = Sha3_256::default();
         keccak.input(&data);
-        keccak.result(&mut res);
+        keccak.result();
     });
 }
