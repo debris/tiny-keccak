@@ -230,7 +230,7 @@ impl_global_alias!(sha3_384,  384);
 impl_global_alias!(sha3_512,  512);
 
 impl Keccak {
-    fn new(rate: usize, delim: u8) -> Keccak {
+    pub fn new(rate: usize, delim: u8) -> Keccak {
         Keccak {
             a: [0; PLEN],
             offset: 0,
