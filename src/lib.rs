@@ -317,6 +317,10 @@ impl Keccak {
         aa[rate - 1] ^= 0x80;
     }
 
+    pub fn fill_block(&mut self) {
+        self.offset = self.rate;
+    }
+
     // squeeze output
     pub fn squeeze(&mut self, output: &mut [u8]) {
         let outlen = output.len();
