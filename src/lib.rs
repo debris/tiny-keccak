@@ -318,7 +318,8 @@ impl Keccak {
     }
 
     pub fn fill_block(&mut self) {
-        self.offset = self.rate;
+        self.keccakf();
+        self.offset = 0;
     }
 
     // squeeze output
