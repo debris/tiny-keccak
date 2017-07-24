@@ -153,3 +153,22 @@ fn long_string_sha3_512_parts() {
     let ref_ex: &[u8] = &expected;
     assert_eq!(ref_res, ref_ex);
 }
+
+#[test]
+fn fill_shake() {
+    const RATE: usize = 168;
+    let mut shake = Keccak::new_shake128();
+    shake.update(&[0x42; RATE / 2]);
+    let mut shake2 = shake.clone();
+
+    shake.update(&[0; RATE / 2]);
+    shake2.fill_block();
+
+    let mut res = [0; 32];
+    let mut res2 = [0; 32];
+
+    shake.finalize(&mut res);
+    shake2.finalize(&mut res2);
+
+    assert_eq!(res, res2);
+}
