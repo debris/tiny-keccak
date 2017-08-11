@@ -111,7 +111,7 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
 
         FOR5!(x, 1, {
             FOR5!(y, 5, {
-                a[y + x] ^= b[(x + 4) % 5] ^ b[(x + 1) % 5].rotate_left(1);
+                a[y + x] ^= &b[(x + 4) % 5] ^ b[(x + 1) % 5].rotate_left(1);
             });
         });
 
