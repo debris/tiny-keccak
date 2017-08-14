@@ -145,6 +145,20 @@ fn setout(src: &[u8], dst: &mut [u8], len: usize) {
     dst[..len].copy_from_slice(&src[..len]);
 }
 
+fn xorin(dst: &mut [u8], src: &[u8]) {
+    assert!(dst.len() <= src.len());
+    let len = dst.len();
+    let mut dst_ptr = dst.as_mut_ptr();
+    let mut src_ptr = src.as_ptr();
+    for _ in 0..len {
+        unsafe {
+            *dst_ptr ^= *src_ptr;
+            src_ptr = src_ptr.offset(1);
+            dst_ptr = dst_ptr.offset(1);
+        }
+    }
+}
+
 /// Total number of lanes.
 const PLEN: usize = 25;
 
@@ -279,38 +293,28 @@ impl Keccak {
 
     // Absorb input
     pub fn absorb(&mut self, input: &[u8]) {
-        fn xorin(dst: &mut [u8], src: &[u8]) {
-            for (d, i) in dst.iter_mut().zip(src) {
-                *d ^= *i;
-            }
-        }
-
-        let inlen = input.len();
-        let mut rate = self.rate - self.offset;
-
         //first foldp
         let mut ip = 0;
-        let mut l = inlen;
+        let mut l = input.len();
+        let mut rate = self.rate - self.offset;
+        let mut offset = self.offset;
         while l >= rate {
-            let offset = self.offset;
             xorin(&mut self.a_mut_bytes()[offset..][..rate], &input[ip..]);
             keccakf(&mut self.a);
             ip += rate;
             l -= rate;
             rate = self.rate;
-            self.offset = 0;
+            offset = 0;
         }
 
         // Xor in the last block
-        let offset = self.offset;
         xorin(&mut self.a_mut_bytes()[offset..][..l], &input[ip..]);
-        self.offset += l;
+        self.offset = offset + l;
     }
 
     pub fn pad(&mut self) {
         let offset = self.offset;
         let rate = self.rate;
-
         let delim = self.delim;
         let aa = self.a_mut_bytes();
         aa[offset] ^= delim;
@@ -324,17 +328,14 @@ impl Keccak {
 
     // squeeze output
     pub fn squeeze(&mut self, output: &mut [u8]) {
-        let outlen = output.len();
-        let rate = self.rate;
-
         // second foldp
         let mut op = 0;
-        let mut l = outlen;
-        while l >= rate {
-            setout(self.a_bytes(), &mut output[op..], rate);
+        let mut l = output.len();
+        while l >= self.rate {
+            setout(self.a_bytes(), &mut output[op..], self.rate);
             keccakf(&mut self.a);
-            op += rate;
-            l -= rate;
+            op += self.rate;
+            l -= self.rate;
         }
 
         setout(self.a_bytes(), &mut output[op..], l);
