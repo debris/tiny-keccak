@@ -148,8 +148,14 @@ fn setout(src: &[u8], dst: &mut [u8], len: usize) {
 fn xorin(dst: &mut [u8], src: &[u8]) {
     assert!(dst.len() <= src.len());
     let len = dst.len();
-    for i in 0..len {
-        dst[i] ^= src[i];
+    let mut dst_ptr = dst.as_mut_ptr();
+    let mut src_ptr = src.as_ptr();
+    for _ in 0..len {
+        unsafe {
+            *dst_ptr ^= *src_ptr;
+            src_ptr = src_ptr.offset(1);
+            dst_ptr = dst_ptr.offset(1);
+        }
     }
 }
 
