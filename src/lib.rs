@@ -98,42 +98,71 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
     let mut b: [u64; 5] = [0; 5];
     let mut t: u64;
     let mut x: usize;
-    let mut y: usize;
 
     for i in 0..24 {
         // Theta
-        FOR5!(x, 1, {
-            b[x] = 0;
-            FOR5!(y, 5, {
-                b[x] ^= a[x + y];
-            });
-        });
+        b[4] = a[24] ^ a[19] ^ a[14] ^ a[9] ^ a[4];
+        b[3] = a[23] ^ a[18] ^ a[13] ^ a[8] ^ a[3];
+        b[2] = a[22] ^ a[17] ^ a[12] ^ a[7] ^ a[2];
+        b[1] = a[21] ^ a[16] ^ a[11] ^ a[6] ^ a[1];
+        b[0] = a[20] ^ a[15] ^ a[10] ^ a[5] ^ a[0];
 
-        FOR5!(x, 1, {
-            FOR5!(y, 5, {
-                a[y + x] ^= b[(x + 4) % 5] ^ b[(x + 1) % 5].rotate_left(1);
-            });
-        });
+        t = b[4] ^ b[1].rotate_left(1);
+        a[0] ^= t;
+        a[5] ^= t;
+        a[10] ^= t;
+        a[15] ^= t;
+        a[20] ^= t;
+
+        t = b[0] ^ b[2].rotate_left(1);
+        a[1] ^= t;
+        a[6] ^= t;
+        a[11] ^= t;
+        a[16] ^= t;
+        a[21] ^= t;
+
+        t = b[1] ^ b[3].rotate_left(1);
+        a[2] ^= t;
+        a[7] ^= t;
+        a[12] ^= t;
+        a[17] ^= t;
+        a[22] ^= t;
+
+        t = b[2] ^ b[4].rotate_left(1);
+        a[3] ^= t;
+        a[8] ^= t;
+        a[13] ^= t;
+        a[18] ^= t;
+        a[23] ^= t;
+
+        t = b[3] ^ b[0].rotate_left(1);
+        a[4] ^= t;
+        a[9] ^= t;
+        a[14] ^= t;
+        a[19] ^= t;
+        a[24] ^= t;
 
         // Rho and pi
-        t = a[1];
+        b[1] = a[PI[23]];
         x = 0;
+
         REPEAT24!({
             b[0] = a[PI[x]];
-            a[PI[x]] = t.rotate_left(RHO[x]);
+            a[PI[x]] = b[1].rotate_left(RHO[x]);
         }, {
-            t = b[0];
+            b[1] = b[0];
             x += 1;
         });
 
         // Chi
-        FOR5!(y, 5, {
-            FOR5!(x, 1, {
-                b[x] = a[y + x];
-            });
-            FOR5!(x, 1, {
-                a[y + x] = b[x] ^ ((!b[(x + 1) % 5]) & (b[(x + 2) % 5]));
-            });
+        FOR5!(x, 5, {
+            b.copy_from_slice(&a[x..x + 5]);
+
+            a[x] ^= (!b[1]) & b[2];
+            a[x + 1] ^= (!b[2]) & b[3];
+            a[x + 2] ^= (!b[3]) & b[4];
+            a[x + 3] ^= (!b[4]) & b[0];
+            a[x + 4] ^= (!b[0]) & b[1];
         });
 
         // Iota
@@ -141,12 +170,14 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
     }
 }
 
+#[inline]
 fn setout(src: &[u8], dst: &mut [u8], len: usize) {
     dst[..len].copy_from_slice(&src[..len]);
 }
 
+#[inline]
 fn xorin(dst: &mut [u8], src: &[u8]) {
-    assert!(dst.len() <= src.len());
+    debug_assert!(dst.len() <= src.len());
     let len = dst.len();
     let mut dst_ptr = dst.as_mut_ptr();
     let mut src_ptr = src.as_ptr();
