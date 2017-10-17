@@ -2,10 +2,12 @@
 
 An implementation of the FIPS-202-defined SHA-3 and SHAKE functions.
 
-[![Build Status][travis-image]][travis-url]
+[![Build Status][travis-image]][travis-url][![Build coverage][coveralls-image]][coveralls-url]
 
 [travis-image]: https://travis-ci.org/debris/tiny-keccak.svg?branch=master
 [travis-url]: https://travis-ci.org/debris/tiny-keccak
+[coveralls-image]: https://coveralls.io/repos/github/debris/tiny-keccak/badge.svg?branch=master
+[coveralls-url]: http://coveralls.io/github/debris/tiny-keccak?branch=master
 
 [Documentation](https://docs.rs/tiny-keccak)
 

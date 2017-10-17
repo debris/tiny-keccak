@@ -1,14 +1,37 @@
-sudo: false
+sudo: required
+
 language: rust
+
+cache:
+  - apt
+  - cargo
+
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - binutils-dev
+      - cmake
+    sources:
+      - kalakris-cmake
+
 branches:
   only:
   - master
+
 matrix:
   fast_finish: false
   include:
   - rust: stable
-  - rust: beta
-  - rust: nightly
-env:
-  global:
-  - secure: l5lDSI17fT0llAW3w7JLm50DAYp+74voTEiH0JQUl0UT5QwWK+v42G7d8y6YgQldkbiRNZoDBLSbin9rXr41A+3eCysSzpzAPfB/dWr8/brON92GPerT4jCHkpq5V6Ac3OrZV1aGrRoC4qJFRjJ396lFxBTTEsEb0Su7V4xtP6HOd5kSBklVzbs6KhZ884UjDX2nYn0CqayANgJ0hn2rV5y/LUwv1CfAyj1ciUPkfgoMxf+AJJ6+u+LO3fNPpfeHR0XmzeUFTxKziKsxEL+eyFKrQ+4QQqSn2wn7a2LOtjcMarCKoapX8IdXGil/ceUYNmyHGv9mMWrHMRhOwX/Of2nUuXSIzVfqfxrHGLwpHrimKiDIVX9IR7gS6rtoXjn4B+vFTw8bCW0OeUZkI/DjCM4y80/VBok2qGZP6aNDiy0E+76AiMHvTL8YvdIkhYqewFgnWdaOvG0UEYtxaRl0CXqgm0dUZk4e6p/p7BGuZh0FcOAoLPT988KFyv4KJIw139PGqhJDH2gYO8m7eNjprNWpOpAf0iA0LD4vRvScF5yQtN5KPKdH/KZuCSwRN48hXwJX+BfPRWz6iUGPYmC3oGUuF4W31f4qgq7OeFvHm3+QSgFeYHYFkhqtWNFUgH+jXgpQuTqtgOCh5PYFfxQJmjcdHp5ZHssoFRZ8J8XS5iQ=
+
+before_script:
+  - export PATH=$HOME/.cargo/bin:$PATH
+  - cargo install cargo-travis || echo "cargo-travis already installed"
+
+script:
+  - cargo test
+
+after_success:
+  - cargo coveralls --exclude-pattern benches/,comparison/,examples/,target/,tests/

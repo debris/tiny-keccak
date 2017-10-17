@@ -25,3 +25,4 @@ members = ["comparison"]
 
 [badges]
 travis-ci = { repository = "debris/tiny-keccak", branch = "master"}
+coveralls = { repository = "debris/tiny-keccak", branch = "master"}
