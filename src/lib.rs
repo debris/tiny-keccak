@@ -340,4 +340,39 @@ impl Keccak {
 
         setout(self.a_bytes(), &mut output[op..], l);
     }
+
+    #[inline]
+    pub fn xof(mut self) -> XofReader {
+        self.pad();
+
+        keccakf(&mut self.a);
+
+        XofReader { keccak: self, offset: 0 }
+    }
+}
+
+pub struct XofReader {
+    keccak: Keccak,
+    offset: usize
+}
+
+impl XofReader {
+    pub fn squeeze(&mut self, output: &mut [u8]) {
+        // second foldp
+        let mut op = 0;
+        let mut l = output.len();
+        let mut rate = self.keccak.rate - self.offset;
+        let mut offset = self.offset;
+        while l >= rate {
+            setout(&self.keccak.a_bytes()[offset..], &mut output[op..], rate);
+            self.keccak.keccakf();
+            op += rate;
+            l -= rate;
+            rate = self.keccak.rate;
+            offset = 0;
+        }
+
+        setout(&self.keccak.a_bytes()[offset..], &mut output[op..], l);
+        self.offset = offset + l;
+    }
 }
