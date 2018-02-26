@@ -73,7 +73,14 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
             // Theta
             unroll! {
                 for x in 0..5 {
+                    // This looks useless but it gets way slower without it. I tried using
+                    // `mem::uninitialized` for the initialisation of `arrays` but that also makes
+                    // it slower, although not by as much as removing this assignment. Optimisers
+                    // are weird. Maybe a different version of LLVM will react differently, so if
+                    // you see this comment in the future try deleting this assignment and using
+                    // uninit above and see how it affects the benchmarks.
                     arrays[i][x] = 0;
+
                     unroll! {
                         for y_count in 0..5 {
                             let y = y_count * 5;
