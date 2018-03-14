@@ -155,6 +155,35 @@ fn long_string_sha3_512_parts() {
 }
 
 #[test]
+fn squeeze_multiple() {
+    let mut sha3 = Keccak::new_sha3_512();
+    let data: Vec<u8> = From::from("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
+
+    sha3.update(&data);
+    let mut res: [u8; 64] = [0; 64];
+    sha3.squeeze(&mut res[0..10]);
+    sha3.squeeze(&mut res[10..30]);
+    sha3.squeeze(&mut res[30..60]);
+    sha3.squeeze(&mut res[60..60]);
+    sha3.squeeze(&mut res[60..64]);
+
+    let expected = vec![
+        0xf3, 0x2a, 0x94, 0x23, 0x55, 0x13, 0x51, 0xdf,
+        0x0a, 0x07, 0xc0, 0xb8, 0xc2, 0x0e, 0xb9, 0x72,
+        0x36, 0x7c, 0x39, 0x8d, 0x61, 0x06, 0x60, 0x38,
+        0xe1, 0x69, 0x86, 0x44, 0x8e, 0xbf, 0xbc, 0x3d,
+        0x15, 0xed, 0xe0, 0xed, 0x36, 0x93, 0xe3, 0x90,
+        0x5e, 0x9a, 0x8c, 0x60, 0x1d, 0x9d, 0x00, 0x2a,
+        0x06, 0x85, 0x3b, 0x97, 0x97, 0xef, 0x9a, 0xb1,
+        0x0c, 0xbd, 0xe1, 0x00, 0x9c, 0x7d, 0x0f, 0x09
+    ];
+
+    let ref_res: &[u8] = &res;
+    let ref_ex: &[u8] = &expected;
+    assert_eq!(ref_res, ref_ex);
+}
+
+#[test]
 fn fill_shake() {
     const RATE: usize = 168;
     let mut shake = Keccak::new_shake128();
