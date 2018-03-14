@@ -190,7 +190,15 @@ pub struct Keccak {
     a: [u64; PLEN],
     offset: usize,
     rate: usize,
-    delim: u8
+    delim: u8,
+//    state: SpongeState
+}
+
+/// The `SpongeState` enum describes the state of the internal sponge.
+/// When the sponge transitions from one state to another 
+enum SpongeState {
+    Absorbing,
+    Squeezing,
 }
 
 impl Clone for Keccak {
@@ -198,6 +206,7 @@ impl Clone for Keccak {
         let mut res = Keccak::new(self.rate, self.delim);
         res.a.copy_from_slice(&self.a);
         res.offset = self.offset;
+        //res.state = self.state;
         res
     }
 }
@@ -316,6 +325,8 @@ impl Keccak {
         aa[rate - 1] ^= 0x80;
     }
 
+    /// Fills the rest of the block with zero bits and applies permutation.
+    /// This implements `bytepad` as defined in NIST SP800-185 for cSHAKE etc.
     pub fn fill_block(&mut self) {
         self.keccakf();
         self.offset = 0;
