@@ -332,7 +332,7 @@ impl Keccak {
             setout(self.a_bytes(), &mut output[op..], rate);
             keccakf(&mut self.a);
             op += rate;
-            l -= self.rate;
+            l -= rate;
             rate = self.rate;
             offset = 0;
         }
