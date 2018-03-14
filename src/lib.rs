@@ -326,12 +326,14 @@ impl Keccak {
         // second foldp
         let mut op = 0;
         let mut l = output.len();
+        let mut rate = self.rate - self.offset;
         let mut offset = self.offset;
-        while l >= self.rate {
-            setout(self.a_bytes(), &mut output[op..], self.rate);
+        while l >= rate {
+            setout(self.a_bytes(), &mut output[op..], rate);
             keccakf(&mut self.a);
-            op += self.rate;
+            op += rate;
             l -= self.rate;
+            rate = self.rate;
             offset = 0;
         }
 
