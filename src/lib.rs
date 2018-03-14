@@ -191,13 +191,13 @@ pub struct Keccak {
     offset: usize,
     rate: usize,
     delim: u8,
-    state: SpongeState
+    mode: SpongeMode
 }
 
-/// The `SpongeState` enum describes the state of the internal sponge.
-/// When the sponge transitions from one state to another 
+/// The `SpongeMode` enum describes the mode of the internal sponge.
+/// When the sponge transitions from one mode to another.
 #[derive(PartialEq,Clone)]
-enum SpongeState {
+enum SpongeMode {
     Absorbing,
     Squeezing,
 }
@@ -207,7 +207,7 @@ impl Clone for Keccak {
         let mut res = Keccak::new(self.rate, self.delim);
         res.a.copy_from_slice(&self.a);
         res.offset = self.offset;
-        res.state = self.state.clone();
+        res.mode = self.mode.clone();
         res
     }
 }
@@ -258,7 +258,7 @@ impl Keccak {
             offset: 0,
             rate: rate,
             delim: delim,
-            state: SpongeState::Absorbing
+            mode: SpongeMode::Absorbing
         }
     }
 
@@ -281,26 +281,26 @@ impl Keccak {
         unsafe { ::core::mem::transmute(&mut self.a) }
     }
 
-    /// Sets the sponge state to `new_state`.
+    /// Sets the sponge mode to `new_mode`.
     /// Does necessary padding+permutation if needed to transition
-    /// from one state to another.
-    fn set_state(&mut self, new_state: SpongeState) {
-        if self.state != new_state {
-            match self.state {
-                SpongeState::Absorbing => {
+    /// from one mode to another.
+    fn set_mode(&mut self, new_mode: SpongeMode) {
+        if self.mode != new_mode {
+            match self.mode {
+                SpongeMode::Absorbing => {
                     // We were absorbing input and now switching to squeezing.
                     // This means we need to pad the input and perform a permutation.
                     self.pad();
                     self.fill_block();
                 }
-                SpongeState::Squeezing => {
+                SpongeMode::Squeezing => {
                     // We were squeezing the sponge and now switching back to absorbing.
-                    // Since we were reading from the state, padding does not make sense.
+                    // Since we were reading from the mode, padding does not make sense.
                     // We only need permute the block and reset the offset.
                     self.fill_block();
                 }
             }
-            self.state = new_state;
+            self.mode = new_mode;
         }
     }
 
@@ -325,7 +325,7 @@ impl Keccak {
     /// Automatically applies permutation
     /// if previously was squeezing the sponge.
     pub fn absorb(&mut self, input: &[u8]) {
-        self.set_state(SpongeState::Absorbing);
+        self.set_mode(SpongeMode::Absorbing);
         let mut ip = 0;
         let mut l = input.len();
         let mut remaining_rate = self.rate - self.offset;
@@ -366,7 +366,7 @@ impl Keccak {
     /// Automatically applies padding and permutation
     /// if previously was absorbing some input.
     pub fn squeeze(&mut self, output: &mut [u8]) {
-        self.set_state(SpongeState::Squeezing);
+        self.set_mode(SpongeMode::Squeezing);
         let mut op = 0;
         let mut l = output.len();
         let mut remaining_rate = self.rate - self.offset;
