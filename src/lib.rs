@@ -191,11 +191,12 @@ pub struct Keccak {
     offset: usize,
     rate: usize,
     delim: u8,
-//    state: SpongeState
+    state: SpongeState
 }
 
 /// The `SpongeState` enum describes the state of the internal sponge.
 /// When the sponge transitions from one state to another 
+#[derive(PartialEq,Clone)]
 enum SpongeState {
     Absorbing,
     Squeezing,
@@ -206,7 +207,7 @@ impl Clone for Keccak {
         let mut res = Keccak::new(self.rate, self.delim);
         res.a.copy_from_slice(&self.a);
         res.offset = self.offset;
-        //res.state = self.state;
+        res.state = self.state.clone();
         res
     }
 }
@@ -248,12 +249,16 @@ impl_global_alias!(sha3_384,  384);
 impl_global_alias!(sha3_512,  512);
 
 impl Keccak {
+    /// Instantiates a new Keccak instance with a given rate
+    /// and a delimiter with the first padding bit pre-computed
+    /// (first bit of the 10*1 padding).
     pub fn new(rate: usize, delim: u8) -> Keccak {
         Keccak {
             a: [0; PLEN],
             offset: 0,
             rate: rate,
-            delim: delim
+            delim: delim,
+            state: SpongeState::Absorbing
         }
     }
 
@@ -276,38 +281,61 @@ impl Keccak {
         unsafe { ::core::mem::transmute(&mut self.a) }
     }
 
+    /// Sets the sponge state to `new_state`.
+    /// Does necessary padding+permutation if needed to transition
+    /// from one state to another.
+    fn set_state(&mut self, new_state: SpongeState) {
+        if self.state != new_state {
+            match self.state {
+                SpongeState::Absorbing => {
+                    // We were absorbing input and now switching to squeezing.
+                    // This means we need to pad the input and perform a permutation.
+                    self.pad();
+                    self.fill_block();
+                }
+                SpongeState::Squeezing => {
+                    // We were squeezing the sponge and now switching back to absorbing.
+                    // Since we were reading from the state, padding does not make sense.
+                    // We only need permute the block and reset the offset.
+                    self.fill_block();
+                }
+            }
+            self.state = new_state;
+        }
+    }
+
+    /// A convenience wrapper around `absorb`.
     pub fn update(&mut self, input: &[u8]) {
         self.absorb(input);
     }
 
+    /// Performs a permutation on the block.
+    /// Do not use this method directly.
     #[inline]
     pub fn keccakf(&mut self) {
         keccakf(&mut self.a);
     }
 
+    /// Convenience wrapper around `squeeze`.
     pub fn finalize(mut self, output: &mut [u8]) {
-        self.pad();
-
-        // apply keccakf
-        keccakf(&mut self.a);
-
-        // squeeze output
         self.squeeze(output);
     }
 
-    // Absorb input
+    /// Absorbs input slice.
+    /// Automatically applies permutation
+    /// if previously was squeezing the sponge.
     pub fn absorb(&mut self, input: &[u8]) {
-        //first foldp
+        self.set_state(SpongeState::Absorbing);
         let mut ip = 0;
         let mut l = input.len();
-        let mut rate = self.rate - self.offset;
+        let mut remaining_rate = self.rate - self.offset;
         let mut offset = self.offset;
-        while l >= rate {
-            xorin(&mut self.a_mut_bytes()[offset..][..rate], &input[ip..]);
+        while l >= remaining_rate {
+            xorin(&mut self.a_mut_bytes()[offset..][..remaining_rate], &input[ip..]);
             keccakf(&mut self.a);
-            ip += rate;
-            l -= rate;
-            rate = self.rate;
+            ip += remaining_rate;
+            l -= remaining_rate;
+            remaining_rate = self.rate;
             offset = 0;
         }
 
@@ -316,6 +344,8 @@ impl Keccak {
         self.offset = offset + l;
     }
 
+    /// Pads the input to the end of the block.
+    /// Do not use this method directly.
     pub fn pad(&mut self) {
         let offset = self.offset;
         let rate = self.rate;
@@ -332,19 +362,21 @@ impl Keccak {
         self.offset = 0;
     }
 
-    // squeeze output
+    /// Squeezes an output to a given slice.
+    /// Automatically applies padding and permutation
+    /// if previously was absorbing some input.
     pub fn squeeze(&mut self, output: &mut [u8]) {
-        // second foldp
+        self.set_state(SpongeState::Squeezing);
         let mut op = 0;
         let mut l = output.len();
-        let mut rate = self.rate - self.offset;
+        let mut remaining_rate = self.rate - self.offset;
         let mut offset = self.offset;
-        while l >= rate {
-            setout(&self.a_bytes()[offset..], &mut output[op..], rate);
+        while l >= remaining_rate {
+            setout(&self.a_bytes()[offset..], &mut output[op..], remaining_rate);
             keccakf(&mut self.a);
-            op += rate;
-            l -= rate;
-            rate = self.rate;
+            op += remaining_rate;
+            l -= remaining_rate;
+            remaining_rate = self.rate;
             offset = 0;
         }
 
@@ -352,38 +384,18 @@ impl Keccak {
         self.offset = offset + l;
     }
 
+    /// Returns self with type `XofReader`.
+    /// See documentaton for `XofReader`.
     #[inline]
-    pub fn xof(mut self) -> XofReader {
-        self.pad();
-
-        keccakf(&mut self.a);
-
-        XofReader { keccak: self, offset: 0 }
+    pub fn xof(self) -> XofReader {
+        self
     }
 }
 
-pub struct XofReader {
-    keccak: Keccak,
-    offset: usize
-}
+/// Alias to Keccak instance that supports half-duplex operation.
+/// This means, one can squeeze output multiple times,
+/// and also switch between absorbing and squeezing multiple times.
+///
+/// This type alias is left for compatibility.
+pub type XofReader = Keccak;
 
-impl XofReader {
-    pub fn squeeze(&mut self, output: &mut [u8]) {
-        // second foldp
-        let mut op = 0;
-        let mut l = output.len();
-        let mut rate = self.keccak.rate - self.offset;
-        let mut offset = self.offset;
-        while l >= rate {
-            setout(&self.keccak.a_bytes()[offset..], &mut output[op..], rate);
-            self.keccak.keccakf();
-            op += rate;
-            l -= rate;
-            rate = self.keccak.rate;
-            offset = 0;
-        }
-
-        setout(&self.keccak.a_bytes()[offset..], &mut output[op..], l);
-        self.offset = offset + l;
-    }
-}
