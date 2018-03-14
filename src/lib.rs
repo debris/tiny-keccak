@@ -329,7 +329,7 @@ impl Keccak {
         let mut rate = self.rate - self.offset;
         let mut offset = self.offset;
         while l >= rate {
-            setout(self.a_bytes()[offset..], &mut output[op..], rate);
+            setout(&self.a_bytes()[offset..], &mut output[op..], rate);
             keccakf(&mut self.a);
             op += rate;
             l -= rate;
@@ -337,7 +337,7 @@ impl Keccak {
             offset = 0;
         }
 
-        setout(self.a_bytes()[offset..], &mut output[op..], l);
+        setout(&self.a_bytes()[offset..], &mut output[op..], l);
         self.offset = offset + l;
     }
 
