@@ -9,7 +9,7 @@ keywords = ["sha3", "sha-3", "keccak", "crypto", "tiny"]
 categories = ["cryptography", "no-std"]
 
 [dependencies]
-crunchy = "0.1.6"
+keccak = "0.1.0"
 
 [profile.dev]
 opt-level = 3  # Controls the --opt-level the compiler builds with
