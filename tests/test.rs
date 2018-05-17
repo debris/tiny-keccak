@@ -20,6 +20,23 @@ fn empty_keccak() {
 }
 
 #[test]
+fn string_keccak_256() {
+    let mut keccak_256 = Keccak::new_keccak256();
+    let data: Vec<u8> = From::from("hello world");
+    keccak_256.update(&data);
+    let mut res : [u8;32] = [0;32];
+    keccak_256.finalize(&mut res);
+    let expected = vec![
+        0x47, 0x17, 0x32, 0x85, 0xa8, 0xd7, 0x34, 0x1e, 
+        0x5e, 0x97, 0x2f, 0xc6, 0x77, 0x28, 0x63, 0x84, 
+        0xf8, 0x02, 0xf8, 0xef, 0x42, 0xa5, 0xec, 0x5f, 
+        0x03, 0xbb, 0xfa, 0x25, 0x4c, 0xb0, 0x1f, 0xad
+    ];
+    let ref_ex: &[u8] = &expected;
+    assert_eq!(&res, ref_ex);
+}
+
+#[test]
 fn empty_sha3_256() {
     let sha3 = Keccak::new_sha3_256();
     let mut res: [u8; 32] = [0; 32];
