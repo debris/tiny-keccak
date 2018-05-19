@@ -1,4 +1,5 @@
 extern crate tiny_keccak;
+extern crate core;
 
 use tiny_keccak::*;
 
@@ -20,20 +21,26 @@ fn empty_keccak() {
 }
 
 #[test]
-fn string_keccak_256() {
-    let mut keccak_256 = Keccak::new_keccak256();
-    let data: Vec<u8> = From::from("hello world");
-    keccak_256.update(&data);
-    let mut res : [u8;32] = [0;32];
-    keccak_256.finalize(&mut res);
-    let expected = vec![
-        0x47, 0x17, 0x32, 0x85, 0xa8, 0xd7, 0x34, 0x1e, 
-        0x5e, 0x97, 0x2f, 0xc6, 0x77, 0x28, 0x63, 0x84, 
-        0xf8, 0x02, 0xf8, 0xef, 0x42, 0xa5, 0xec, 0x5f, 
-        0x03, 0xbb, 0xfa, 0x25, 0x4c, 0xb0, 0x1f, 0xad
-    ];
-    let ref_ex: &[u8] = &expected;
-    assert_eq!(&res, ref_ex);
+fn string_keccak_256_overlapping_buffer() {
+    let mut in_and_out : [u8; 32] = [0;32];
+    for i in 1..6 { in_and_out[i as usize - 1] = i }
+
+    let ptr = in_and_out.as_mut_ptr();
+    Keccak::keccak256(
+        unsafe {
+            core::slice::from_raw_parts(ptr, 5) // read a piece from start of in_and_out
+        },
+        &mut in_and_out, // write over the whole array
+    );
+
+    let expected = vec![125, 135, 197, 234, 117, 247, 55, 139, 183, 1, 228, 4, 197, 6, 57, 22, 26, 243, 239, 246, 98, 147, 233, 243, 117, 181, 241, 126, 181, 4, 118, 244];
+    assert_eq!(&in_and_out, &expected.as_ref());
+
+    // Verify using overlapping in/out buffers yields same result as a "normal" hash
+    let control_in : [u8;5] = [1,2,3,4,5];
+    let mut control_out : [u8;32] = [0;32];
+    Keccak::keccak256(&control_in, &mut control_out);
+    assert_eq!(&control_out, &in_and_out);
 }
 
 #[test]
