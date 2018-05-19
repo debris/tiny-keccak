@@ -24,7 +24,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tiny-keccak = "1.3"
+tiny-keccak = "1.4.1"
 ```
 
 and this to your crate root:
