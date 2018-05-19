@@ -66,73 +66,63 @@ const RC: [u64; 24] = [
 #[allow(unused_assignments)]
 /// keccak-f[1600]
 pub fn keccakf(a: &mut [u64; PLEN]) {
-    let mut arrays: [[u64; 5]; 24] = [[0; 5]; 24];
+    for i in 0..24 {
+        let mut array: [u64; 5] = [0; 5];
 
-    unroll! {
-        for i in 0..24 {
-            // Theta
-            unroll! {
-                for x in 0..5 {
-                    // This looks useless but it gets way slower without it. I tried using
-                    // `mem::uninitialized` for the initialisation of `arrays` but that also makes
-                    // it slower, although not by as much as removing this assignment. Optimisers
-                    // are weird. Maybe a different version of LLVM will react differently, so if
-                    // you see this comment in the future try deleting this assignment and using
-                    // uninit above and see how it affects the benchmarks.
-                    arrays[i][x] = 0;
-
-                    unroll! {
-                        for y_count in 0..5 {
-                            let y = y_count * 5;
-                            arrays[i][x] ^= a[x + y];
-                        }
+        // Theta
+        unroll! {
+            for x in 0..5 {
+                unroll! {
+                    for y_count in 0..5 {
+                        let y = y_count * 5;
+                        array[x] ^= a[x + y];
                     }
                 }
             }
-
-            unroll! {
-                for x in 0..5 {
-                    unroll! {
-                        for y_count in 0..5 {
-                            let y = y_count * 5;
-                            a[y + x] ^= arrays[i][(x + 4) % 5] ^ arrays[i][(x + 1) % 5].rotate_left(1);
-                        }
-                    }
-                }
-            }
-
-            // Rho and pi
-            let mut last = a[1];
-            unroll! {
-                for x in 0..24 {
-                    arrays[i][0] = a[PI[x]];
-                    a[PI[x]] = last.rotate_left(RHO[x]);
-                    last = arrays[i][0];
-                }
-            }
-
-            // Chi
-            unroll! {
-                for y_step in 0..5 {
-                    let y = y_step * 5;
-
-                    unroll! {
-                        for x in 0..5 {
-                            arrays[i][x] = a[y + x];
-                        }
-                    }
-
-                    unroll! {
-                        for x in 0..5 {
-                            a[y + x] = arrays[i][x] ^ ((!arrays[i][(x + 1) % 5]) & (arrays[i][(x + 2) % 5]));
-                        }
-                    }
-                }
-            };
-
-            // Iota
-            a[0] ^= RC[i];
         }
+
+        unroll! {
+            for x in 0..5 {
+                unroll! {
+                    for y_count in 0..5 {
+                        let y = y_count * 5;
+                        a[y + x] ^= array[(x + 4) % 5] ^ array[(x + 1) % 5].rotate_left(1);
+                    }
+                }
+            }
+        }
+
+        // Rho and pi
+        let mut last = a[1];
+        unroll! {
+            for x in 0..24 {
+                array[0] = a[PI[x]];
+                a[PI[x]] = last.rotate_left(RHO[x]);
+                last = array[0];
+            }
+        }
+
+        // Chi
+        unroll! {
+            for y_step in 0..5 {
+                let y = y_step * 5;
+
+                unroll! {
+                    for x in 0..5 {
+                        array[x] = a[y + x];
+                    }
+                }
+
+                unroll! {
+                    for x in 0..5 {
+                        a[y + x] = array[x] ^ ((!array[(x + 1) % 5]) & (array[(x + 2) % 5]));
+                    }
+                }
+            }
+        };
+
+        // Iota
+        a[0] ^= RC[i];
     }
 }
 
