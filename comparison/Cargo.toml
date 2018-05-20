@@ -5,4 +5,4 @@ authors = ["debris <marek.kotewicz@gmail.com>"]
 
 [dependencies]
 tiny-keccak = { path = "../" }
-sha3 = "^0.5.3"
+sha3 = "0.7.3"
