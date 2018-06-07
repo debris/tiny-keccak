@@ -40,6 +40,8 @@
 #[macro_use]
 extern crate crunchy;
 
+use core::hash::Hasher;
+
 const RHO: [u32; 24] = [
      1,  3,  6, 10, 15, 21,
     28, 36, 45, 55,  2, 14,
@@ -333,6 +335,19 @@ impl Keccak {
         keccakf(&mut self.a);
 
         XofReader { keccak: self, offset: 0 }
+    }
+}
+
+impl Hasher for Keccak {
+    fn write(&mut self, bytes: &[u8]) {
+        self.update(bytes);
+    }
+
+    fn finish(&self) -> u64 {
+        let mut out = [0u8; 8];
+        self.clone().finalize(&mut out);
+        (out[7] as u64) << 56 | (out[6] as u64) << 48 | (out[5] as u64) << 40 | (out[4] as u64) << 32 |
+            (out[3] as u64) << 24 | (out[2] as u64) << 16 | (out[1] as u64) << 8 | (out[0] as u64)
     }
 }
 
