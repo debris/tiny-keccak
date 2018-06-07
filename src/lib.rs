@@ -40,7 +40,7 @@
 #[macro_use]
 extern crate crunchy;
 
-use core::hash::Hasher;
+use core::hash::{Hasher, BuildHasher};
 
 const RHO: [u32; 24] = [
      1,  3,  6, 10, 15, 21,
@@ -348,6 +348,14 @@ impl Hasher for Keccak {
         self.clone().finalize(&mut out);
         (out[7] as u64) << 56 | (out[6] as u64) << 48 | (out[5] as u64) << 40 | (out[4] as u64) << 32 |
             (out[3] as u64) << 24 | (out[2] as u64) << 16 | (out[1] as u64) << 8 | (out[0] as u64)
+    }
+}
+
+impl BuildHasher for Keccak {
+    type Hasher = Self;
+
+    fn build_hasher(&self) -> Self::Hasher {
+        self.clone()
     }
 }
 
