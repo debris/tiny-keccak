@@ -39,6 +39,7 @@
 
 #[macro_use]
 extern crate crunchy;
+extern crate byteorder;
 
 const RHO: [u32; 24] = [
      1,  3,  6, 10, 15, 21,
@@ -228,6 +229,22 @@ impl_global_alias!(sha3_256,  256);
 impl_global_alias!(sha3_384,  384);
 impl_global_alias!(sha3_512,  512);
 
+#[inline]
+fn with<F>(state: &mut [u64; PLEN], f: F)
+    where F: FnOnce(&mut [u8; PLEN * 8])
+{
+    use byteorder::{ ByteOrder, LittleEndian };
+
+    #[inline]
+    fn transmute(a: &mut [u64; PLEN]) -> &mut [u8; PLEN * 8] {
+        unsafe { &mut *(a as *mut [u64; PLEN] as *mut [u8; PLEN * 8]) }
+    }
+
+    LittleEndian::from_slice_u64(state);
+    f(transmute(state));
+    LittleEndian::from_slice_u64(state);
+}
+
 impl Keccak {
     pub fn new(rate: usize, delim: u8) -> Keccak {
         Keccak {
@@ -248,14 +265,6 @@ impl Keccak {
     impl_constructor!(new_sha3_256,  sha3_256,  256, 0x06);
     impl_constructor!(new_sha3_384,  sha3_384,  384, 0x06);
     impl_constructor!(new_sha3_512,  sha3_512,  512, 0x06);
-
-    fn a_bytes(&self) -> &[u8; PLEN * 8] {
-        unsafe { ::core::mem::transmute(&self.a) }
-    }
-
-    fn a_mut_bytes(&mut self) -> &mut [u8; PLEN * 8] {
-        unsafe { ::core::mem::transmute(&mut self.a) }
-    }
 
     pub fn update(&mut self, input: &[u8]) {
         self.absorb(input);
@@ -284,7 +293,7 @@ impl Keccak {
         let mut rate = self.rate - self.offset;
         let mut offset = self.offset;
         while l >= rate {
-            xorin(&mut self.a_mut_bytes()[offset..][..rate], &input[ip..]);
+            with(&mut self.a, |a| xorin(&mut a[offset..][..rate], &input[ip..]));
             keccakf(&mut self.a);
             ip += rate;
             l -= rate;
@@ -293,7 +302,7 @@ impl Keccak {
         }
 
         // Xor in the last block
-        xorin(&mut self.a_mut_bytes()[offset..][..l], &input[ip..]);
+        with(&mut self.a, |a| xorin(&mut a[offset..][..l], &input[ip..]));
         self.offset = offset + l;
     }
 
@@ -301,9 +310,10 @@ impl Keccak {
         let offset = self.offset;
         let rate = self.rate;
         let delim = self.delim;
-        let aa = self.a_mut_bytes();
-        aa[offset] ^= delim;
-        aa[rate - 1] ^= 0x80;
+        with(&mut self.a, |a| {
+            a[offset] ^= delim;
+            a[rate - 1] ^= 0x80;
+        });
     }
 
     pub fn fill_block(&mut self) {
@@ -314,16 +324,17 @@ impl Keccak {
     // squeeze output
     pub fn squeeze(&mut self, output: &mut [u8]) {
         // second foldp
+        let rate = self.rate;
         let mut op = 0;
         let mut l = output.len();
-        while l >= self.rate {
-            setout(self.a_bytes(), &mut output[op..], self.rate);
+        while l >= rate {
+            with(&mut self.a, |a| setout(a, &mut output[op..], rate));
             keccakf(&mut self.a);
-            op += self.rate;
-            l -= self.rate;
+            op += rate;
+            l -= rate;
         }
 
-        setout(self.a_bytes(), &mut output[op..], l);
+        with(&mut self.a, |a| setout(a, &mut output[op..], l));
     }
 
     #[inline]
@@ -349,7 +360,7 @@ impl XofReader {
         let mut rate = self.keccak.rate - self.offset;
         let mut offset = self.offset;
         while l >= rate {
-            setout(&self.keccak.a_bytes()[offset..], &mut output[op..], rate);
+            with(&mut self.keccak.a, |a| setout(&a[offset..], &mut output[op..], rate));
             self.keccak.keccakf();
             op += rate;
             l -= rate;
@@ -357,7 +368,7 @@ impl XofReader {
             offset = 0;
         }
 
-        setout(&self.keccak.a_bytes()[offset..], &mut output[op..], l);
+        with(&mut self.keccak.a, |a| setout(&a[offset..], &mut output[op..], l));
         self.offset = offset + l;
     }
 }
