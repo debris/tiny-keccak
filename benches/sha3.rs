@@ -6,7 +6,6 @@
 #![feature(test)]
 
 extern crate test;
-extern crate tiny_keccak;
 
 use tiny_keccak::*;
 
