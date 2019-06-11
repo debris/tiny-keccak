@@ -24,7 +24,7 @@
 //! extern crate tiny_keccak;
 //! ```
 //!
-//! Original implemntation in C:
+//! Original implementation in C:
 //! https://github.com/coruus/keccak-tiny
 //!
 //! Implementor: David Leon Gil
