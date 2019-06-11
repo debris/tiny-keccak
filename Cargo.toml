@@ -1,4 +1,5 @@
 [package]
+edition = "2018"
 description = "An implementation of the FIPS-202-defined SHA-3 and SHAKE functions."
 homepage = "https://github.com/debris/tiny-keccak"
 license = "CC0-1.0"
@@ -12,10 +13,6 @@ categories = ["cryptography", "no-std"]
 crunchy = "0.1.6"
 
 [profile.dev]
-opt-level = 3  # Controls the --opt-level the compiler builds with
-debug = false   # Controls whether the compiler passes `-g`
-
-[profile.doc]
 opt-level = 3  # Controls the --opt-level the compiler builds with
 debug = false   # Controls whether the compiler passes `-g`
 

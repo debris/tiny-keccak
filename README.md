@@ -27,16 +27,9 @@ Add this to your `Cargo.toml`:
 tiny-keccak = "1.4.2"
 ```
 
-and this to your crate root:
-
-```rust
-extern crate tiny_keccak;
-```
-
 ## Example
 
 ```rust
-extern crate tiny_keccak;
 use tiny_keccak::Keccak;
 
 fn main() {

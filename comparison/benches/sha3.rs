@@ -1,10 +1,6 @@
 #![feature(test)]
 
-extern crate test;
-extern crate tiny_keccak;
-extern crate sha3;
-
-use sha3::{Sha3_256, Digest};
+use sha3::{Digest, Sha3_256};
 
 use test::Bencher;
 
