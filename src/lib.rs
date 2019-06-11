@@ -18,7 +18,7 @@
 //! tiny-keccak = "1.0"
 //! ```
 //!
-//! Original implemntation in C:
+//! Original implementation in C:
 //! https://github.com/coruus/keccak-tiny
 //!
 //! Implementor: David Leon Gil
