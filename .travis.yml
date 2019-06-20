@@ -21,7 +21,7 @@ matrix:
       rust: stable
 
 install:
-  - curl -LSfs https://japaric.github.io/trust/install.sh | sh -s -- --git japaric/cross --force
+  - cargo install cross
   - source ~/.cargo/env || true
 
 script:
