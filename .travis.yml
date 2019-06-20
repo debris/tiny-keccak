@@ -21,7 +21,7 @@ matrix:
       rust: stable
 
 install:
-  - cargo install cross
+  - cargo install cross --force
   - source ~/.cargo/env || true
 
 script:
