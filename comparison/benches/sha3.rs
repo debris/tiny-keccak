@@ -1,7 +1,8 @@
 #![feature(test)]
 
-use sha3::{Digest, Sha3_256};
+extern crate test;
 
+use sha3::{Digest, Sha3_256};
 use test::Bencher;
 
 #[bench]
