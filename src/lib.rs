@@ -68,10 +68,30 @@ const RC: [u64; 24] = [
     0x8000000080008008u64,
 ];
 
-#[allow(unused_assignments)]
+const RC_KANGAROO: [u64; 12] = [
+	0x000000008000808b,
+	0x800000000000008b,
+	0x8000000000008089,
+	0x8000000000008003,
+	0x8000000000008002,
+	0x8000000000000080,
+	0x000000000000800a,
+	0x800000008000000a,
+	0x8000000080008081,
+	0x8000000000008080,
+	0x0000000080000001,
+	0x8000000080008008,
+];
+
 /// keccak-f[1600]
+#[inline]
 pub fn keccakf(a: &mut [u64; PLEN]) {
-    for i in 0..24 {
+    keccakf_with_rounds(a, &RC);
+}
+
+#[allow(unused_assignments)]
+fn keccakf_with_rounds(a: &mut [u64; PLEN], rounds: &[u64]) {
+    for round in rounds {
         let mut array: [u64; 5] = [0; 5];
 
         // Theta
@@ -127,7 +147,7 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
         };
 
         // Iota
-        a[0] ^= RC[i];
+        a[0] ^= round;
     }
 }
 
@@ -229,11 +249,12 @@ pub struct Keccak {
     offset: usize,
     rate: usize,
     delim: u8,
+    rounds: &'static [u64],
 }
 
 impl Clone for Keccak {
     fn clone(&self) -> Self {
-        let mut res = Keccak::new(self.rate, self.delim);
+        let mut res = Keccak::new_with_rounds(self.rate, self.delim, self.rounds);
         res.buffer = self.buffer.clone();
         res.offset = self.offset;
         res
@@ -277,11 +298,16 @@ impl_global_alias!(sha3_512, 512);
 
 impl Keccak {
     pub fn new(rate: usize, delim: u8) -> Keccak {
+        Keccak::new_with_rounds(rate, delim, &RC)
+    }
+
+    pub fn new_with_rounds(rate: usize, delim: u8, rounds: &'static [u64]) -> Keccak {
         Keccak {
             buffer: Buffer::default(),
             offset: 0,
-            rate: rate,
-            delim: delim,
+            rate,
+            delim,
+            rounds,
         }
     }
 
@@ -302,14 +328,14 @@ impl Keccak {
 
     #[inline]
     pub fn keccakf(&mut self) {
-        keccakf(self.buffer.inner());
+        keccakf_with_rounds(self.buffer.inner(), self.rounds);
     }
 
     pub fn finalize(mut self, output: &mut [u8]) {
         self.pad();
 
         // apply keccakf
-        keccakf(self.buffer.inner());
+        self.keccakf();
 
         // squeeze output
         self.squeeze(output);
@@ -324,7 +350,7 @@ impl Keccak {
         let mut offset = self.offset;
         while l >= rate {
             self.buffer.xorin(&input[ip..], offset, rate);
-            keccakf(self.buffer.inner());
+            self.keccakf();
             ip += rate;
             l -= rate;
             rate = self.rate;
@@ -352,7 +378,7 @@ impl Keccak {
         let mut l = output.len();
         while l >= self.rate {
             self.buffer.setout(&mut output[op..], 0, self.rate);
-            keccakf(self.buffer.inner());
+            self.keccakf();
             op += self.rate;
             l -= self.rate;
         }
@@ -364,7 +390,7 @@ impl Keccak {
     pub fn xof(mut self) -> XofReader {
         self.pad();
 
-        keccakf(self.buffer.inner());
+        self.keccakf();
 
         XofReader {
             keccak: self,
@@ -396,5 +422,102 @@ impl XofReader {
 
         self.keccak.buffer.setout(&mut output[op..], offset, l);
         self.offset = offset + l;
+    }
+}
+
+/// KangarooTwelve's length encoding.
+struct EncodedLen {
+    offset: usize,
+    buffer: [u8; 9],
+}
+
+impl EncodedLen {
+    fn new(len: usize) -> Self {
+        let len_view = len.to_be_bytes();
+        let offset = len_view.iter().position(|i| *i != 0).unwrap_or(8);
+        let mut buffer = [0u8; 9];
+        buffer[..8].copy_from_slice(&len_view);
+        buffer[8] = 8 - offset as u8;
+
+        EncodedLen {
+            offset,
+            buffer,
+        }
+    }
+
+    fn value(&self) -> &[u8] {
+        &self.buffer[self.offset..]
+    }
+}
+
+pub struct KangarooTwelve<T> {
+    state: Keccak,
+    current_chunk: Keccak,
+    custom_string: Option<T>,
+    written: usize,
+    chunks: usize,
+}
+
+impl<T: AsRef<[u8]>> KangarooTwelve<T> {
+    const MAX_CHUNK_SIZE: usize = 8192;
+
+    pub fn new(custom_string: T) -> Self {
+        KangarooTwelve {
+            state: Keccak::new_with_rounds(168, 0, &RC_KANGAROO),
+            current_chunk: Keccak::new_with_rounds(168, 0x0b, &RC_KANGAROO),
+            custom_string: Some(custom_string),
+            written: 0,
+            chunks: 0,
+        }
+    }
+
+    pub fn update(&mut self, input: &[u8]) {
+        let mut to_absorb = input;
+        while to_absorb.len() > 0 {
+            if self.written == Self::MAX_CHUNK_SIZE {
+                if self.chunks == 0 {
+                    self.state.update(&[0x03, 0, 0, 0, 0, 0, 0, 0]);
+                } else {
+                    let mut tmp_chunk = [0u8; 32];
+                    self.current_chunk.clone().finalize(&mut tmp_chunk);
+                    self.state.update(&tmp_chunk);
+                    self.current_chunk = Keccak::new_with_rounds(168, 0x0b, &RC_KANGAROO);
+                }
+
+                self.written = 0;
+                self.chunks += 1;
+            }
+
+            let todo = ::core::cmp::min(Self::MAX_CHUNK_SIZE - self.written, to_absorb.len());
+            if self.chunks == 0 {
+                self.state.update(&to_absorb[..todo]);
+            } else {
+                self.current_chunk.update(&to_absorb[..todo]);
+            }
+            self.written += todo;
+            to_absorb = &to_absorb[todo..];
+        }
+    }
+
+    pub fn finalize(mut self, output: &mut [u8]) {
+        let custom_string = self.custom_string.take()
+            .expect("KangarooTwelve cannot be initialized without custom_string; qed");
+        let encoded_len = EncodedLen::new(custom_string.as_ref().len());
+        self.update(custom_string.as_ref());
+        self.update(encoded_len.value());
+
+        if self.chunks == 0 {
+            self.state.delim = 0x07;
+        } else {
+            let encoded_chunks = EncodedLen::new(self.chunks);
+            let mut tmp_chunk = [0u8; 32];
+            self.current_chunk.finalize(&mut tmp_chunk);
+            self.state.update(&tmp_chunk);
+            self.state.update(encoded_chunks.value());
+            self.state.update(&[0xff, 0xff]);
+            self.state.delim = 0x06;
+        }
+
+        self.state.finalize(output);
     }
 }
