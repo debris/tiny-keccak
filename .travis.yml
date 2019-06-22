@@ -1,14 +1,34 @@
-sudo: false
 language: rust
+services: docker
+sudo: required
+
 branches:
   only:
   - master
+
 matrix:
   fast_finish: false
   include:
-  - rust: stable
-  - rust: beta
-  - rust: nightly
+    - env: TARGET=i686-unknown-linux-gnu
+      rust: stable
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: stable
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: nightly
+    - env: TARGET=powerpc-unknown-linux-gnu
+      rust: stable
+    - env: TARGET=powerpc64-unknown-linux-gnu
+      rust: stable
+
+install:
+  - cargo install cross --force
+  - source ~/.cargo/env || true
+
+script:
+  - cross test --verbose --all --release --target $TARGET
+
+cache: cargo
+
 env:
   global:
   - secure: l5lDSI17fT0llAW3w7JLm50DAYp+74voTEiH0JQUl0UT5QwWK+v42G7d8y6YgQldkbiRNZoDBLSbin9rXr41A+3eCysSzpzAPfB/dWr8/brON92GPerT4jCHkpq5V6Ac3OrZV1aGrRoC4qJFRjJ396lFxBTTEsEb0Su7V4xtP6HOd5kSBklVzbs6KhZ884UjDX2nYn0CqayANgJ0hn2rV5y/LUwv1CfAyj1ciUPkfgoMxf+AJJ6+u+LO3fNPpfeHR0XmzeUFTxKziKsxEL+eyFKrQ+4QQqSn2wn7a2LOtjcMarCKoapX8IdXGil/ceUYNmyHGv9mMWrHMRhOwX/Of2nUuXSIzVfqfxrHGLwpHrimKiDIVX9IR7gS6rtoXjn4B+vFTw8bCW0OeUZkI/DjCM4y80/VBok2qGZP6aNDiy0E+76AiMHvTL8YvdIkhYqewFgnWdaOvG0UEYtxaRl0CXqgm0dUZk4e6p/p7BGuZh0FcOAoLPT988KFyv4KJIw139PGqhJDH2gYO8m7eNjprNWpOpAf0iA0LD4vRvScF5yQtN5KPKdH/KZuCSwRN48hXwJX+BfPRWz6iUGPYmC3oGUuF4W31f4qgq7OeFvHm3+QSgFeYHYFkhqtWNFUgH+jXgpQuTqtgOCh5PYFfxQJmjcdHp5ZHssoFRZ8J8XS5iQ=
