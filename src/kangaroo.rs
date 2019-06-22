@@ -95,7 +95,7 @@ struct EncodedLen {
 
 impl EncodedLen {
     fn new(len: usize) -> Self {
-        let len_view = len.to_be_bytes();
+        let len_view = (len as u64).to_be_bytes();
         let offset = len_view.iter().position(|i| *i != 0).unwrap_or(8);
         let mut buffer = [0u8; 9];
         buffer[..8].copy_from_slice(&len_view);
