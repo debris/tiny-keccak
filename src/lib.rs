@@ -174,11 +174,7 @@ impl Buffer {
     fn execute<F: FnOnce(&mut [u8])>(&mut self, offset: usize, len: usize, f: F) {
         fn swap_endianess(buffer: &mut [u64]) {
             for item in buffer {
-                let i: &mut [u8; 8] = unsafe { ::core::mem::transmute(item) };
-                i.swap(0, 7);
-                i.swap(1, 6);
-                i.swap(2, 5);
-                i.swap(3, 4);
+                *item = item.swap_bytes();
             }
         }
 
@@ -302,6 +298,7 @@ impl Keccak {
     }
 
     pub fn new_with_rounds(rate: usize, delim: u8, rounds: &'static [u64]) -> Keccak {
+        assert!(rate != 0, "rate cannot be equal 0");
         Keccak {
             buffer: Buffer::default(),
             offset: 0,
