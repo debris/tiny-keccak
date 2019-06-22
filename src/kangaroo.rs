@@ -1,5 +1,5 @@
 use crunchy::unroll;
-use super::{PLEN, Keccak, RHO, PI, Rounds};
+use super::{PLEN, KeccakFamily, RHO, PI, Permutation};
 
 const RC: [u64; 12] = [
 	0x000000008000808b,
@@ -78,6 +78,14 @@ pub fn keccakf(a: &mut [u64; PLEN]) {
     }
 }
 
+struct Reduced;
+
+impl Permutation for Reduced {
+    #[inline]
+    fn execute(buffer: &mut [u64; PLEN]) {
+        keccakf(buffer);
+    }
+}
 
 /// KangarooTwelve's length encoding.
 struct EncodedLen {
@@ -104,9 +112,16 @@ impl EncodedLen {
     }
 }
 
+pub fn k12(custom_string: &[u8], data: &[u8], result: &mut [u8]) {
+    let mut k12 = KangarooTwelve::new(custom_string);
+    k12.update(data);
+    k12.finalize(result);
+}
+
+#[derive(Clone)]
 pub struct KangarooTwelve<T> {
-    state: Keccak,
-    current_chunk: Keccak,
+    state: KeccakFamily<Reduced>,
+    current_chunk: KeccakFamily<Reduced>,
     custom_string: Option<T>,
     written: usize,
     chunks: usize,
@@ -117,8 +132,8 @@ impl<T: AsRef<[u8]>> KangarooTwelve<T> {
 
     pub fn new(custom_string: T) -> Self {
         KangarooTwelve {
-            state: Keccak::new_with_rounds(168, 0, Rounds::Reduced),
-            current_chunk: Keccak::new_with_rounds(168, 0x0b, Rounds::Reduced),
+            state: KeccakFamily::new(168, 0),
+            current_chunk: KeccakFamily::new(168, 0x0b),
             custom_string: Some(custom_string),
             written: 0,
             chunks: 0,
@@ -135,7 +150,7 @@ impl<T: AsRef<[u8]>> KangarooTwelve<T> {
                     let mut tmp_chunk = [0u8; 32];
                     self.current_chunk.clone().finalize(&mut tmp_chunk);
                     self.state.update(&tmp_chunk);
-                    self.current_chunk = Keccak::new_with_rounds(168, 0x0b, Rounds::Reduced);
+                    self.current_chunk = KeccakFamily::new(168, 0x0b);
                 }
 
                 self.written = 0;
