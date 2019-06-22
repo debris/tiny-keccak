@@ -147,10 +147,10 @@ impl<T: AsRef<[u8]>> KangarooTwelve<T> {
                 if self.chunks == 0 {
                     self.state.update(&[0x03, 0, 0, 0, 0, 0, 0, 0]);
                 } else {
-                    let mut tmp_chunk = [0u8; 32];
-                    self.current_chunk.clone().finalize(&mut tmp_chunk);
-                    self.state.update(&tmp_chunk);
-                    self.current_chunk = KeccakFamily::new(168, 0x0b);
+                    let mut chunk_hash = [0u8; 32];
+                    let current_chunk = ::core::mem::replace(&mut self.current_chunk, KeccakFamily::new(168, 0x0b));
+                    current_chunk.finalize(&mut chunk_hash);
+                    self.state.update(&chunk_hash);
                 }
 
                 self.written = 0;
