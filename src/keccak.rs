@@ -1,4 +1,3 @@
-use crunchy::unroll;
 use super::{KeccakFamily, Permutation, Buffer};
 
 const ROUNDS: usize = 24;
@@ -68,7 +67,7 @@ impl_global_alias!(sha3_256, 256);
 impl_global_alias!(sha3_384, 384);
 impl_global_alias!(sha3_512, 512);
 
-pub(crate) struct Normal;
+struct Normal;
 
 impl Permutation for Normal {
     #[inline]

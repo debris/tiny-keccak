@@ -1,4 +1,3 @@
-use crunchy::unroll;
 use super::{KeccakFamily, Permutation, Buffer};
 
 const ROUNDS: usize = 12;

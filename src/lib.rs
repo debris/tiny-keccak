@@ -38,6 +38,8 @@ macro_rules! keccak_function {
         #[allow(unused_assignments)]
         #[allow(non_upper_case_globals)]
         pub fn $name(a: &mut [u64; $crate::WORDS]) {
+            use crunchy::unroll;
+
             for i in 0..$rounds {
                 let mut array: [u64; 5] = [0; 5];
 
