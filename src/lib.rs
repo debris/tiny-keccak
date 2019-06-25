@@ -1,10 +1,4 @@
-//! An implementation of SHA3, SHAKE, Keccak and KangarooTwelve functions.
-//!
-//! ## Building
-//!
-//! ```bash
-//! cargo build
-//! ```
+//! An implementation of sha3, shake, keccak and KangarooTwelve functions.
 //!
 //! ## Usage
 //!
@@ -14,6 +8,10 @@
 //! [dependencies]
 //! tiny-keccak = "1.5"
 //! ```
+//!
+//! ## Features
+//! - keccak (enabled by default)
+//! - k12 (**not** enabled by default, implements KangarooTwelve)
 //!
 //! Inspired by implementations:
 //! - [keccak-tiny](https://github.com/coruus/keccak-tiny)

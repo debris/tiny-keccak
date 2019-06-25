@@ -1,6 +1,6 @@
 # tiny-keccak
 
-An implementation of the FIPS-202-defined SHA-3 and SHAKE functions.
+An implementation of sha3, shake, keccak and KangarooTwelve functions.
 
 [![Build Status][travis-image]][travis-url]
 
@@ -24,7 +24,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tiny-keccak = "1.4.2"
+tiny-keccak = "1.5"
 ```
 
 ## Example
@@ -34,12 +34,10 @@ use tiny_keccak::Keccak;
 
 fn main() {
     let mut sha3 = Keccak::new_sha3_256();
-    let data: Vec<u8> = From::from("hello");
-    let data2: Vec<u8> = From::from("world");
 
-    sha3.update(&data);
+    sha3.update("hello".as_ref());
     sha3.update(&[b' ']);
-    sha3.update(&data2);
+    sha3.update("world".as_ref());
 
     let mut res: [u8; 32] = [0; 32];
     sha3.finalize(&mut res);

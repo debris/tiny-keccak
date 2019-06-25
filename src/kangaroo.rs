@@ -56,12 +56,14 @@ impl EncodedLen {
     }
 }
 
+/// Hashes the data with `KangarooTwelve` hash function using custom string.
 pub fn k12(custom_string: &[u8], data: &[u8], result: &mut [u8]) {
     let mut k12 = KangarooTwelve::new(custom_string);
     k12.update(data);
     k12.finalize(result);
 }
 
+/// KangarooTwelve implementation.
 #[derive(Clone)]
 pub struct KangarooTwelve<T> {
     state: KeccakFamily<Reduced>,

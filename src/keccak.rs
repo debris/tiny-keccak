@@ -77,7 +77,7 @@ impl Permutation for Normal {
     }
 }
 
-/// This structure should be used to create keccak/sha3 hash.
+/// shake, keccak and sha3 implementation.
 ///
 /// ```rust
 /// use tiny_keccak::Keccak;
@@ -130,6 +130,10 @@ impl Keccak {
         self.state.update(input);
     }
 
+    #[deprecated(
+        since = "1.5.0",
+        note = "Please use the update function instead"
+    )]
     pub fn absorb(&mut self, input: &[u8]) {
         self.state.update(input);
     }
