@@ -31,12 +31,6 @@
 
 #![no_std]
 
-mod kangaroo;
-mod keccak;
-
-pub use kangaroo::{k12, KangarooTwelve, keccakf as keccakf12};
-pub use keccak::*;
-
 const RHO: [u32; 24] = [
     1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
 ];
@@ -45,24 +39,98 @@ const PI: [usize; 24] = [
     10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
 ];
 
-const PLEN: usize = 25;
+const WORDS: usize = 25;
+
+macro_rules! keccak_function {
+    ($name: ident, $rounds: expr, $rc: expr) => {
+
+        #[allow(unused_assignments)]
+        pub fn $name(a: &mut [u64; $crate::WORDS]) {
+            for i in 0..$rounds {
+                let mut array: [u64; 5] = [0; 5];
+
+                // Theta
+                unroll! {
+                    for x in 0..5 {
+                        unroll! {
+                            for y_count in 0..5 {
+                                let y = y_count * 5;
+                                array[x] ^= a[x + y];
+                            }
+                        }
+                    }
+                }
+
+                unroll! {
+                    for x in 0..5 {
+                        unroll! {
+                            for y_count in 0..5 {
+                                let y = y_count * 5;
+                                a[y + x] ^= array[(x + 4) % 5] ^ array[(x + 1) % 5].rotate_left(1);
+                            }
+                        }
+                    }
+                }
+
+                // Rho and pi
+                let mut last = a[1];
+                unroll! {
+                    for x in 0..24 {
+                        array[0] = a[$crate::PI[x]];
+                        a[$crate::PI[x]] = last.rotate_left($crate::RHO[x]);
+                        last = array[0];
+                    }
+                }
+
+                // Chi
+                unroll! {
+                    for y_step in 0..5 {
+                        let y = y_step * 5;
+
+                        unroll! {
+                            for x in 0..5 {
+                                array[x] = a[y + x];
+                            }
+                        }
+
+                        unroll! {
+                            for x in 0..5 {
+                                a[y + x] = array[x] ^ ((!array[(x + 1) % 5]) & (array[(x + 2) % 5]));
+                            }
+                        }
+                    }
+                };
+
+                // Iota
+                a[0] ^= $rc[i];
+            }
+        }
+
+    }
+}
+
+mod kangaroo;
+mod keccak;
+
+pub use kangaroo::{k12, KangarooTwelve, keccakf as keccakf12};
+pub use keccak::*;
 
 trait Permutation {
-    fn execute(a: &mut [u64; PLEN]);
+    fn execute(a: &mut Buffer);
 }
 
 #[derive(Default, Clone)]
-struct Buffer([u64; PLEN]);
+struct Buffer([u64; WORDS]);
 
 impl Buffer {
-    fn inner(&mut self) -> &mut [u64; PLEN] {
+    fn words(&mut self) -> &mut [u64; WORDS] {
         &mut self.0
     }
 
     #[cfg(target_endian = "little")]
     #[inline]
     fn execute<F: FnOnce(&mut [u8])>(&mut self, offset: usize, len: usize, f: F) {
-        let buffer: &mut [u8; PLEN * 8] = unsafe { ::core::mem::transmute(&mut self.0) };
+        let buffer: &mut [u8; WORDS * 8] = unsafe { ::core::mem::transmute(&mut self.0) };
         f(&mut buffer[offset..][..len]);
     }
 
@@ -78,7 +146,7 @@ impl Buffer {
         let start = offset / 8;
         let end = (offset + len + 7) / 8;
         swap_endianess(&mut self.0[start..end]);
-        let buffer: &mut [u8; PLEN * 8] = unsafe { ::core::mem::transmute(&mut self.0) };
+        let buffer: &mut [u8; WORDS * 8] = unsafe { ::core::mem::transmute(&mut self.0) };
         f(&mut buffer[offset..][..len]);
         swap_endianess(&mut self.0[start..end]);
     }
@@ -142,7 +210,7 @@ impl <P: Permutation> KeccakFamily<P> {
     }
 
     fn keccakf(&mut self) {
-        P::execute(self.buffer.inner())
+        P::execute(&mut self.buffer);
     }
 
     fn update(&mut self, input: &[u8]) {

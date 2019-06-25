@@ -26,11 +26,11 @@ fn bench_sha3_256_input_4096_bytes(b: &mut Bencher) {
 
 #[bench]
 fn keccakf_u64(b: &mut Bencher) {
-    const BYTES: usize = 25;
-    b.bytes = (BYTES * 8) as u64;
+    const WORDS: usize = 25;
+    b.bytes = (WORDS * 8) as u64;
 
     b.iter(|| {
-        let mut data = [0u64; BYTES];
+        let mut data = [0u64; WORDS];
         keccakf(&mut data);
     });
 }

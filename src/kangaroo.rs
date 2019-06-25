@@ -1,5 +1,5 @@
 use crunchy::unroll;
-use super::{PLEN, KeccakFamily, RHO, PI, Permutation};
+use super::{KeccakFamily, Permutation, Buffer};
 
 const RC: [u64; 12] = [
 	0x000000008000808b,
@@ -16,74 +16,17 @@ const RC: [u64; 12] = [
 	0x8000000080008008,
 ];
 
-#[allow(unused_assignments)]
-pub fn keccakf(a: &mut [u64; PLEN]) {
-    for i in 0..12 {
-        let mut array: [u64; 5] = [0; 5];
+const K12_RATE: usize = 168;
 
-        // Theta
-        unroll! {
-            for x in 0..5 {
-                unroll! {
-                    for y_count in 0..5 {
-                        let y = y_count * 5;
-                        array[x] ^= a[x + y];
-                    }
-                }
-            }
-        }
-
-        unroll! {
-            for x in 0..5 {
-                unroll! {
-                    for y_count in 0..5 {
-                        let y = y_count * 5;
-                        a[y + x] ^= array[(x + 4) % 5] ^ array[(x + 1) % 5].rotate_left(1);
-                    }
-                }
-            }
-        }
-
-        // Rho and pi
-        let mut last = a[1];
-        unroll! {
-            for x in 0..24 {
-                array[0] = a[PI[x]];
-                a[PI[x]] = last.rotate_left(RHO[x]);
-                last = array[0];
-            }
-        }
-
-        // Chi
-        unroll! {
-            for y_step in 0..5 {
-                let y = y_step * 5;
-
-                unroll! {
-                    for x in 0..5 {
-                        array[x] = a[y + x];
-                    }
-                }
-
-                unroll! {
-                    for x in 0..5 {
-                        a[y + x] = array[x] ^ ((!array[(x + 1) % 5]) & (array[(x + 2) % 5]));
-                    }
-                }
-            }
-        };
-
-        // Iota
-        a[0] ^= RC[i];
-    }
-}
+/// keccak-f[1600, 12]
+keccak_function!(keccakf, 12, RC);
 
 struct Reduced;
 
 impl Permutation for Reduced {
     #[inline]
-    fn execute(buffer: &mut [u64; PLEN]) {
-        keccakf(buffer);
+    fn execute(buffer: &mut Buffer) {
+        keccakf(buffer.words());
     }
 }
 
@@ -132,8 +75,8 @@ impl<T: AsRef<[u8]>> KangarooTwelve<T> {
 
     pub fn new(custom_string: T) -> Self {
         KangarooTwelve {
-            state: KeccakFamily::new(168, 0),
-            current_chunk: KeccakFamily::new(168, 0x0b),
+            state: KeccakFamily::new(K12_RATE, 0),
+            current_chunk: KeccakFamily::new(K12_RATE, 0x0b),
             custom_string: Some(custom_string),
             written: 0,
             chunks: 0,
@@ -148,7 +91,7 @@ impl<T: AsRef<[u8]>> KangarooTwelve<T> {
                     self.state.update(&[0x03, 0, 0, 0, 0, 0, 0, 0]);
                 } else {
                     let mut chunk_hash = [0u8; 32];
-                    let current_chunk = ::core::mem::replace(&mut self.current_chunk, KeccakFamily::new(168, 0x0b));
+                    let current_chunk = ::core::mem::replace(&mut self.current_chunk, KeccakFamily::new(K12_RATE, 0x0b));
                     current_chunk.finalize(&mut chunk_hash);
                     self.state.update(&chunk_hash);
                 }
