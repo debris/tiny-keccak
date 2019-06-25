@@ -1,7 +1,10 @@
 use crunchy::unroll;
 use super::{KeccakFamily, Permutation, Buffer};
 
-const RC: [u64; 12] = [
+const ROUNDS: usize = 12;
+const K12_RATE: usize = 168;
+
+const RC: [u64; ROUNDS] = [
 	0x000000008000808b,
 	0x800000000000008b,
 	0x8000000000008089,
@@ -16,10 +19,8 @@ const RC: [u64; 12] = [
 	0x8000000080008008,
 ];
 
-const K12_RATE: usize = 168;
-
 /// keccak-f[1600, 12]
-keccak_function!(keccakf, 12, RC);
+keccak_function!(keccakf, ROUNDS, RC);
 
 struct Reduced;
 

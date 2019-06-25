@@ -1,7 +1,4 @@
-//! An implementation of the FIPS-202-defined SHA-3 and SHAKE functions.
-//!
-//! The `Keccak-f[1600]` permutation is fully unrolled; it's nearly as fast
-//! as the Keccak team's optimized permutation.
+//! An implementation of SHA3, SHAKE, Keccak and KangarooTwelve functions.
 //!
 //! ## Building
 //!
@@ -15,16 +12,12 @@
 //!
 //! ```toml
 //! [dependencies]
-//! tiny-keccak = "1.0"
+//! tiny-keccak = "1.5"
 //! ```
 //!
-//! Original implementation in C:
-//! https://github.com/coruus/keccak-tiny
-//!
-//! Implementor: David Leon Gil
-//!
-//! Port to rust:
-//! Marek Kotewicz (marek.kotewicz@gmail.com)
+//! Inspired by implementations:
+//! - [keccak-tiny](https://github.com/coruus/keccak-tiny)
+//! - [GoKangarooTwelve](https://github.com/mimoo/GoKangarooTwelve)
 //!
 //! License: CC0, attribution kindly requested. Blame taken too,
 //! but not liability.
@@ -45,6 +38,7 @@ macro_rules! keccak_function {
     ($name: ident, $rounds: expr, $rc: expr) => {
 
         #[allow(unused_assignments)]
+        #[allow(non_upper_case_globals)]
         pub fn $name(a: &mut [u64; $crate::WORDS]) {
             for i in 0..$rounds {
                 let mut array: [u64; 5] = [0; 5];
@@ -109,10 +103,16 @@ macro_rules! keccak_function {
     }
 }
 
+#[cfg(feature = "k12")]
 mod kangaroo;
+
+#[cfg(feature = "keccak")]
 mod keccak;
 
+#[cfg(feature = "k12")]
 pub use kangaroo::{k12, KangarooTwelve, keccakf as keccakf12};
+
+#[cfg(feature = "keccak")]
 pub use keccak::*;
 
 trait Permutation {

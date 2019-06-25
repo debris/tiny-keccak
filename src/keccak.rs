@@ -1,7 +1,9 @@
 use crunchy::unroll;
 use super::{KeccakFamily, Permutation, Buffer};
 
-const RC: [u64; 24] = [
+const ROUNDS: usize = 24;
+
+const RC: [u64; ROUNDS] = [
     1u64,
     0x8082u64,
     0x800000000000808au64,
@@ -29,7 +31,7 @@ const RC: [u64; 24] = [
 ];
 
 /// keccak-f[1600, 24]
-keccak_function!(keccakf, 24, RC);
+keccak_function!(keccakf, ROUNDS, RC);
 
 macro_rules! impl_constructor {
     ($name: ident, $alias: ident, $bits: expr, $delim: expr) => {
@@ -82,12 +84,10 @@ impl Permutation for Normal {
 ///
 /// fn main() {
 ///     let mut sha3 = Keccak::new_sha3_256();
-///     let data: Vec<u8> = From::from("hello");
-///     let data2: Vec<u8> = From::from("world");
 ///
-///     sha3.update(&data);
+///     sha3.update("hello".as_ref());
 ///     sha3.update(&[b' ']);
-///     sha3.update(&data2);
+///     sha3.update("world".as_ref());
 ///
 ///     let mut res: [u8; 32] = [0; 32];
 ///     sha3.finalize(&mut res);
@@ -138,14 +138,8 @@ impl Keccak {
         self.state.keccakf()
     }
 
-    pub fn finalize(mut self, output: &mut [u8]) {
-        self.state.pad();
-
-        // apply keccakf
-        self.state.keccakf();
-
-        // squeeze output
-        self.state.squeeze(output);
+    pub fn finalize(self, output: &mut [u8]) {
+        self.state.finalize(output);
     }
 
     pub fn pad(&mut self) {
