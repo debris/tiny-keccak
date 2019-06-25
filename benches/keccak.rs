@@ -1,14 +1,8 @@
-//! should be started with:
-//! ```bash
-//! multirust run nightly cargo bench
-//! ```
-
 #![feature(test)]
 
 extern crate test;
 
 use tiny_keccak::*;
-
 use test::Bencher;
 
 #[bench]
@@ -26,11 +20,23 @@ fn bench_sha3_256_input_4096_bytes(b: &mut Bencher) {
 
 #[bench]
 fn keccakf_u64(b: &mut Bencher) {
-    const BYTES: usize = 25;
+    const WORDS: usize = 25;
+    b.bytes = (WORDS * 8) as u64;
+
+    b.iter(|| {
+        let mut data = [0u64; WORDS];
+        keccakf(&mut data);
+    });
+}
+
+#[bench]
+fn bench_keccak256(b: &mut Bencher) {
+    const BYTES: usize = 32;
     b.bytes = BYTES as u64;
 
     b.iter(|| {
-        let mut data = [0u64; BYTES];
-        keccakf(&mut data);
+        let data = [0u8; BYTES];
+        let mut result = [0u8; BYTES];
+        Keccak::keccak256(&data, &mut result);
     });
 }
