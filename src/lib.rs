@@ -128,7 +128,7 @@ impl Buffer {
     #[cfg(target_endian = "little")]
     #[inline]
     fn execute<F: FnOnce(&mut [u8])>(&mut self, offset: usize, len: usize, f: F) {
-        let buffer: &mut [u8; WORDS * 8] = unsafe { ::core::mem::transmute(&mut self.0) };
+        let buffer: &mut [u8; WORDS * 8] = unsafe { core::mem::transmute(&mut self.0) };
         f(&mut buffer[offset..][..len]);
     }
 
@@ -144,7 +144,7 @@ impl Buffer {
         let start = offset / 8;
         let end = (offset + len + 7) / 8;
         swap_endianess(&mut self.0[start..end]);
-        let buffer: &mut [u8; WORDS * 8] = unsafe { ::core::mem::transmute(&mut self.0) };
+        let buffer: &mut [u8; WORDS * 8] = unsafe { core::mem::transmute(&mut self.0) };
         f(&mut buffer[offset..][..len]);
         swap_endianess(&mut self.0[start..end]);
     }
@@ -180,7 +180,7 @@ struct KeccakFamily<P> {
     offset: usize,
     rate: usize,
     delim: u8,
-    permutation: ::core::marker::PhantomData<P>,
+    permutation: core::marker::PhantomData<P>,
 }
 
 impl <P> Clone for KeccakFamily<P> {
@@ -190,7 +190,7 @@ impl <P> Clone for KeccakFamily<P> {
             offset: self.offset,
             rate: self.rate,
             delim: self.delim,
-            permutation: ::core::marker::PhantomData,
+            permutation: core::marker::PhantomData,
         }
     }
 }
@@ -203,7 +203,7 @@ impl <P: Permutation> KeccakFamily<P> {
             offset: 0,
             rate,
             delim,
-            permutation: ::core::marker::PhantomData,
+            permutation: core::marker::PhantomData,
         }
     }
 

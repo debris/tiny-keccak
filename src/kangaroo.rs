@@ -88,27 +88,31 @@ impl<T: AsRef<[u8]>> KangarooTwelve<T> {
 
     pub fn update(&mut self, input: &[u8]) {
         let mut to_absorb = input;
+        if self.chunks == 0 {
+            let todo = core::cmp::min(Self::MAX_CHUNK_SIZE - self.written, to_absorb.len());
+            self.state.update(&to_absorb[..todo]);
+            self.written += todo;
+            to_absorb = &to_absorb[todo..];
+
+            if to_absorb.len() > 0 && self.written == Self::MAX_CHUNK_SIZE {
+                self.state.update(&[0x03, 0, 0, 0, 0, 0, 0, 0]);
+                self.written = 0;
+                self.chunks += 1;
+            }
+        }
+
         while to_absorb.len() > 0 {
             if self.written == Self::MAX_CHUNK_SIZE {
-                if self.chunks == 0 {
-                    self.state.update(&[0x03, 0, 0, 0, 0, 0, 0, 0]);
-                } else {
-                    let mut chunk_hash = [0u8; 32];
-                    let current_chunk = ::core::mem::replace(&mut self.current_chunk, KeccakFamily::new(K12_RATE, 0x0b));
-                    current_chunk.finalize(&mut chunk_hash);
-                    self.state.update(&chunk_hash);
-                }
-
+                let mut chunk_hash = [0u8; 32];
+                let current_chunk = core::mem::replace(&mut self.current_chunk, KeccakFamily::new(K12_RATE, 0x0b));
+                current_chunk.finalize(&mut chunk_hash);
+                self.state.update(&chunk_hash);
                 self.written = 0;
                 self.chunks += 1;
             }
 
-            let todo = ::core::cmp::min(Self::MAX_CHUNK_SIZE - self.written, to_absorb.len());
-            if self.chunks == 0 {
-                self.state.update(&to_absorb[..todo]);
-            } else {
-                self.current_chunk.update(&to_absorb[..todo]);
-            }
+            let todo = core::cmp::min(Self::MAX_CHUNK_SIZE - self.written, to_absorb.len());
+            self.current_chunk.update(&to_absorb[..todo]);
             self.written += todo;
             to_absorb = &to_absorb[todo..];
         }
