@@ -1,4 +1,4 @@
-use crate::{Hasher, CShake, left_encode, right_encode};
+use crate::{left_encode, right_encode, CShake, Hasher};
 
 /// The `TupleHash` extendable-output and hash functions defined in [`SP800-185`].
 ///
@@ -37,7 +37,7 @@ impl Hasher for TupleHash {
     }
 
     fn finalize(mut self, output: &mut [u8]) {
-	    self.state.update(right_encode(output.len() * 8).value());
+        self.state.update(right_encode(output.len() * 8).value());
         self.state.finalize(output)
     }
 }

@@ -189,29 +189,29 @@ pub trait XofReader {
 
 ///// Extendable output function.
 //struct GenericXofReader<P> {
-    //state: KeccakFamily<P>,
-    //offset: usize,
+//state: KeccakFamily<P>,
+//offset: usize,
 //}
 
 //impl<P: Permutation> XofReader for GenericXofReader<P> {
-    //fn squeeze(&mut self, output: &mut [u8]) {
-        //// second foldp
-        //let mut op = 0;
-        //let mut l = output.len();
-        //let mut rate = self.state.rate - self.offset;
-        //let mut offset = self.offset;
-        //while l >= rate {
-            //self.state.buffer.setout(&mut output[op..], offset, rate);
-            //self.state.keccakf();
-            //op += rate;
-            //l -= rate;
-            //rate = self.state.rate;
-            //offset = 0;
-        //}
+//fn squeeze(&mut self, output: &mut [u8]) {
+//// second foldp
+//let mut op = 0;
+//let mut l = output.len();
+//let mut rate = self.state.rate - self.offset;
+//let mut offset = self.offset;
+//while l >= rate {
+//self.state.buffer.setout(&mut output[op..], offset, rate);
+//self.state.keccakf();
+//op += rate;
+//l -= rate;
+//rate = self.state.rate;
+//offset = 0;
+//}
 
-        //self.state.buffer.setout(&mut output[op..], offset, l);
-        //self.offset = offset + l;
-    //}
+//self.state.buffer.setout(&mut output[op..], offset, l);
+//self.offset = offset + l;
+//}
 //}
 
 struct EncodedLen {
@@ -243,10 +243,7 @@ fn right_encode(len: usize) -> EncodedLen {
     let offset = buffer.iter().position(|i| *i != 0).unwrap_or(7);
     buffer[8] = 8 - offset as u8;
 
-    EncodedLen {
-        offset,
-        buffer,
-    }
+    EncodedLen { offset, buffer }
 }
 
 #[derive(Default, Clone)]
@@ -315,7 +312,7 @@ struct KeccakFamily<P> {
     permutation: core::marker::PhantomData<P>,
 }
 
-impl <P> Clone for KeccakFamily<P> {
+impl<P> Clone for KeccakFamily<P> {
     fn clone(&self) -> Self {
         KeccakFamily {
             buffer: self.buffer.clone(),
@@ -327,7 +324,7 @@ impl <P> Clone for KeccakFamily<P> {
     }
 }
 
-impl <P: Permutation> KeccakFamily<P> {
+impl<P: Permutation> KeccakFamily<P> {
     fn new(rate: usize, delim: u8) -> Self {
         assert!(rate != 0, "rate cannot be equal 0");
         KeccakFamily {

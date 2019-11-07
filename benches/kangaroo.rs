@@ -2,8 +2,8 @@
 
 extern crate test;
 
-use tiny_keccak::*;
 use test::Bencher;
+use tiny_keccak::*;
 
 #[bench]
 fn bench_k12(b: &mut Bencher) {

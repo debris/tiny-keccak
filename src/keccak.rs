@@ -1,6 +1,6 @@
 //! The `Keccak` hash functions.
 
-use super::{KeccakFamily, Hasher, Standard};
+use super::{Hasher, KeccakFamily, Standard};
 
 const KECCAK_DELIM: u8 = 0x01;
 
@@ -10,7 +10,7 @@ pub struct Keccak {
     state: KeccakFamily<Standard>,
 }
 
-impl Keccak  {
+impl Keccak {
     /// Creates  new [`Keccak`] hasher with a security level of 128 bits.
     ///
     /// [`Keccak`]: struct.Keccak.html

@@ -18,30 +18,30 @@ fn empty_keccak() {
 
 //#[test]
 //fn string_keccak_256_overlapping_buffer() {
-    //let mut in_and_out: [u8; 32] = [0; 32];
-    //for i in 1..6 {
-        //in_and_out[i as usize - 1] = i
-    //}
+//let mut in_and_out: [u8; 32] = [0; 32];
+//for i in 1..6 {
+//in_and_out[i as usize - 1] = i
+//}
 
-    //let ptr = in_and_out.as_mut_ptr();
-    //Keccak::Keccak::v256(
-        //unsafe {
-            //core::slice::from_raw_parts(ptr, 5) // read a piece from start of in_and_out
-        //},
-        //&mut in_and_out, // write over the whole array
-    //);
+//let ptr = in_and_out.as_mut_ptr();
+//Keccak::Keccak::v256(
+//unsafe {
+//core::slice::from_raw_parts(ptr, 5) // read a piece from start of in_and_out
+//},
+//&mut in_and_out, // write over the whole array
+//);
 
-    //let expected = vec![
-        //125, 135, 197, 234, 117, 247, 55, 139, 183, 1, 228, 4, 197, 6, 57, 22, 26, 243, 239, 246,
-        //98, 147, 233, 243, 117, 181, 241, 126, 181, 4, 118, 244,
-    //];
-    //assert_eq!(&in_and_out, &expected.as_ref());
+//let expected = vec![
+//125, 135, 197, 234, 117, 247, 55, 139, 183, 1, 228, 4, 197, 6, 57, 22, 26, 243, 239, 246,
+//98, 147, 233, 243, 117, 181, 241, 126, 181, 4, 118, 244,
+//];
+//assert_eq!(&in_and_out, &expected.as_ref());
 
-    //// Verify using overlapping in/out buffers yields same result as a "normal" hash
-    //let control_in: [u8; 5] = [1, 2, 3, 4, 5];
-    //let mut control_out: [u8; 32] = [0; 32];
-    //Keccak::Keccak::v256(&control_in, &mut control_out);
-    //assert_eq!(&control_out, &in_and_out);
+//// Verify using overlapping in/out buffers yields same result as a "normal" hash
+//let control_in: [u8; 5] = [1, 2, 3, 4, 5];
+//let mut control_out: [u8; 32] = [0; 32];
+//Keccak::Keccak::v256(&control_in, &mut control_out);
+//assert_eq!(&control_out, &in_and_out);
 //}
 
 #[test]
@@ -170,60 +170,60 @@ fn long_string_sha3_512_parts() {
 
 //#[test]
 //fn fill_shake() {
-    //const RATE: usize = 168;
-    //let mut shake = shake128();
-    //shake.update(&[0x42; RATE / 2]);
-    //let mut shake2 = shake.clone();
+//const RATE: usize = 168;
+//let mut shake = shake128();
+//shake.update(&[0x42; RATE / 2]);
+//let mut shake2 = shake.clone();
 
-    //shake.update(&[0; RATE / 2]);
-    //shake2.fill_block();
+//shake.update(&[0; RATE / 2]);
+//shake2.fill_block();
 
-    //let mut res = [0; 32];
-    //let mut res2 = [0; 32];
+//let mut res = [0; 32];
+//let mut res2 = [0; 32];
 
-    //shake.finalize(&mut res);
-    //shake2.finalize(&mut res2);
+//shake.finalize(&mut res);
+//shake2.finalize(&mut res2);
 
-    //assert_eq!(res, res2);
+//assert_eq!(res, res2);
 //}
 
 //#[test]
 //fn shake_xof() {
-    //let shake = shake128();
-    //let mut xof = shake.xof();
-    //let mut output = [0; 32];
+//let shake = shake128();
+//let mut xof = shake.xof();
+//let mut output = [0; 32];
 
-    //for _ in 0..16 {
-        //xof.squeeze(&mut output);
-    //}
+//for _ in 0..16 {
+//xof.squeeze(&mut output);
+//}
 
-    //assert_eq!(
-        //output,
-        //[
-            //0x43, 0xE4, 0x1B, 0x45, 0xA6, 0x53, 0xF2, 0xA5, 0xC4, 0x49, 0x2C, 0x1A, 0xDD, 0x54,
-            //0x45, 0x12, 0xDD, 0xA2, 0x52, 0x98, 0x33, 0x46, 0x2B, 0x71, 0xA4, 0x1A, 0x45, 0xBE,
-            //0x97, 0x29, 0x0B, 0x6F
-        //]
-    //);
+//assert_eq!(
+//output,
+//[
+//0x43, 0xE4, 0x1B, 0x45, 0xA6, 0x53, 0xF2, 0xA5, 0xC4, 0x49, 0x2C, 0x1A, 0xDD, 0x54,
+//0x45, 0x12, 0xDD, 0xA2, 0x52, 0x98, 0x33, 0x46, 0x2B, 0x71, 0xA4, 0x1A, 0x45, 0xBE,
+//0x97, 0x29, 0x0B, 0x6F
+//]
+//);
 
-    //let mut shake = shake128();
-    //let mut output = [0; 32];
+//let mut shake = shake128();
+//let mut output = [0; 32];
 
-    //for _ in 0..10 {
-        //shake.update(&[0xa3; 20]);
-    //}
+//for _ in 0..10 {
+//shake.update(&[0xa3; 20]);
+//}
 
-    //let mut xof = shake.xof();
-    //for _ in 0..16 {
-        //xof.squeeze(&mut output);
-    //}
- //
-    //assert_eq!(
-        //output,
-        //[
-            //0x44, 0xC9, 0xFB, 0x35, 0x9F, 0xD5, 0x6A, 0xC0, 0xA9, 0xA7, 0x5A, 0x74, 0x3C, 0xFF,
-            //0x68, 0x62, 0xF1, 0x7D, 0x72, 0x59, 0xAB, 0x07, 0x52, 0x16, 0xC0, 0x69, 0x95, 0x11,
-            //0x64, 0x3B, 0x64, 0x39
-        //]
-    //);
+//let mut xof = shake.xof();
+//for _ in 0..16 {
+//xof.squeeze(&mut output);
+//}
+//
+//assert_eq!(
+//output,
+//[
+//0x44, 0xC9, 0xFB, 0x35, 0x9F, 0xD5, 0x6A, 0xC0, 0xA9, 0xA7, 0x5A, 0x74, 0x3C, 0xFF,
+//0x68, 0x62, 0xF1, 0x7D, 0x72, 0x59, 0xAB, 0x07, 0x52, 0x16, 0xC0, 0x69, 0x95, 0x11,
+//0x64, 0x3B, 0x64, 0x39
+//]
+//);
 //}

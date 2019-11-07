@@ -2,8 +2,8 @@
 
 extern crate test;
 
-use tiny_keccak::*;
 use test::Bencher;
+use tiny_keccak::*;
 
 #[bench]
 fn bench_sha3_256_input_4096_bytes(b: &mut Bencher) {

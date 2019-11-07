@@ -1,4 +1,4 @@
-use crate::{Hasher, CShake, left_encode, right_encode};
+use crate::{left_encode, right_encode, CShake, Hasher};
 
 /// The `KMAC` pseudo-random functions defined in [`SP800-185`].
 ///
@@ -30,9 +30,7 @@ impl Kmac {
         state.update(left_encode(key.len() * 8).value());
         state.update(key);
         state.fill_block();
-        Kmac {
-            state,
-        }
+        Kmac { state }
     }
 }
 
@@ -42,7 +40,7 @@ impl Hasher for Kmac {
     }
 
     fn finalize(mut self, output: &mut [u8]) {
-	    self.state.update(right_encode(output.len() * 8).value());
+        self.state.update(right_encode(output.len() * 8).value());
         self.state.finalize(output)
     }
 }

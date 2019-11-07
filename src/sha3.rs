@@ -1,4 +1,4 @@
-use crate::{KeccakFamily, Standard, Hasher};
+use crate::{Hasher, KeccakFamily, Standard};
 
 const SHA3_DELIM: u8 = 0x06;
 

@@ -4,7 +4,12 @@ fn pattern(len: usize) -> Vec<u8> {
     (0..len).map(|j| (j % 251) as u8).collect()
 }
 
-fn test_kangaroo_twelve<A: AsRef<[u8]>, B: AsRef<[u8]>>(custom_string: A, message: B, output_len: usize, expected: &[u8]) {
+fn test_kangaroo_twelve<A: AsRef<[u8]>, B: AsRef<[u8]>>(
+    custom_string: A,
+    message: B,
+    output_len: usize,
+    expected: &[u8],
+) {
     let mut kangaroo = KangarooTwelve::new(custom_string.as_ref());
     kangaroo.update(message.as_ref());
     let mut res = vec![0; output_len];
@@ -77,7 +82,12 @@ fn kangaroo_twelve_with_custom_string_and_message2() {
     let expected = vec![
         0x75, 0xd2, 0xf8, 0x6a, 0x2e, 0x64, 0x45, 0x66, 0x72, 0x6b, 0x4f, 0xbc, 0xfc, 0x56, 0x57,
         0xb9, 0xdb, 0xcf, 0x07, 0x0c, 0x7b, 0x0d, 0xca, 0x06, 0x45, 0x0a, 0xb2, 0x91, 0xd7, 0x44,
-        0x3b, 0xcf
+        0x3b, 0xcf,
     ];
-    test_kangaroo_twelve(pattern(68921), &[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], 32, &expected);
+    test_kangaroo_twelve(
+        pattern(68921),
+        &[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+        32,
+        &expected,
+    );
 }

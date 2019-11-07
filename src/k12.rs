@@ -2,24 +2,24 @@
 //!
 //! [`here`]: https://eprint.iacr.org/2016/770.pdf
 
-use crate::{KeccakFamily, Permutation, Buffer, Hasher, EncodedLen};
+use crate::{Buffer, EncodedLen, Hasher, KeccakFamily, Permutation};
 
 const ROUNDS: usize = 12;
 const K12_RATE: usize = 200 - 128 / 4;
 
 const RC: [u64; ROUNDS] = [
-	0x000000008000808b,
-	0x800000000000008b,
-	0x8000000000008089,
-	0x8000000000008003,
-	0x8000000000008002,
-	0x8000000000000080,
-	0x000000000000800a,
-	0x800000008000000a,
-	0x8000000080008081,
-	0x8000000000008080,
-	0x0000000080000001,
-	0x8000000080008008,
+    0x000000008000808b,
+    0x800000000000008b,
+    0x8000000000008089,
+    0x8000000000008003,
+    0x8000000000008002,
+    0x8000000000000080,
+    0x000000000000800a,
+    0x800000008000000a,
+    0x8000000080008081,
+    0x8000000000008080,
+    0x0000000080000001,
+    0x8000000080008008,
 ];
 
 // keccak-f[1600, 12]
@@ -41,10 +41,7 @@ fn encode_len(len: usize) -> EncodedLen {
     buffer[..8].copy_from_slice(&len_view);
     buffer[8] = 8 - offset as u8;
 
-    EncodedLen {
-        offset,
-        buffer,
-    }
+    EncodedLen { offset, buffer }
 }
 
 /// The `KangarooTwelve` extendable-output and hash function defined [`here`].
@@ -95,7 +92,8 @@ impl<T: AsRef<[u8]> + Clone> Hasher for KangarooTwelve<T> {
         while to_absorb.len() > 0 {
             if self.written == Self::MAX_CHUNK_SIZE {
                 let mut chunk_hash = [0u8; 32];
-                let current_chunk = core::mem::replace(&mut self.current_chunk, KeccakFamily::new(K12_RATE, 0x0b));
+                let current_chunk =
+                    core::mem::replace(&mut self.current_chunk, KeccakFamily::new(K12_RATE, 0x0b));
                 current_chunk.finalize(&mut chunk_hash);
                 self.state.update(&chunk_hash);
                 self.written = 0;
@@ -110,7 +108,9 @@ impl<T: AsRef<[u8]> + Clone> Hasher for KangarooTwelve<T> {
     }
 
     fn finalize(mut self, output: &mut [u8]) {
-        let custom_string = self.custom_string.take()
+        let custom_string = self
+            .custom_string
+            .take()
             .expect("KangarooTwelve cannot be initialized without custom_string; qed");
         let encoded_len = encode_len(custom_string.as_ref().len());
         self.update(custom_string.as_ref());

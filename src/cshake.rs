@@ -2,7 +2,7 @@
 //!
 //! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 
-use crate::{Hasher, KeccakFamily, left_encode, Standard};
+use crate::{left_encode, Hasher, KeccakFamily, Standard};
 
 const CSHAKE_DELIM: u8 = 0x04;
 
@@ -38,9 +38,7 @@ impl CShake {
         state.update(left_encode(custom_string.len() * 8).value());
         state.update(custom_string);
         state.fill_block();
-        CShake {
-            state,
-        }
+        CShake { state }
     }
 
     pub(crate) fn fill_block(&mut self) {
