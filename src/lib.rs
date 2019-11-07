@@ -111,17 +111,41 @@ mod k12;
 #[cfg(feature = "k12")]
 pub use k12::KangarooTwelve;
 
-#[cfg(feature = "fips202")]
-mod fips202;
+#[cfg(feature = "keccak")]
+mod keccak;
 
-#[cfg(feature = "fips202")]
-pub use fips202::*;
+#[cfg(feature = "keccak")]
+pub use keccak::Keccak;
 
-#[cfg(feature = "sp800")]
-mod sp800;
+#[cfg(feature = "shake")]
+mod shake;
 
-#[cfg(feature = "sp800")]
-pub use sp800::*;
+#[cfg(feature = "shake")]
+pub use shake::Shake;
+
+#[cfg(feature = "sha3")]
+mod sha3;
+
+#[cfg(feature = "sha3")]
+pub use sha3::Sha3;
+
+#[cfg(feature = "cshake")]
+mod cshake;
+
+#[cfg(feature = "cshake")]
+pub use cshake::CShake;
+
+#[cfg(feature = "kmac")]
+mod kmac;
+
+#[cfg(feature = "kmac")]
+pub use kmac::KMac;
+
+#[cfg(feature = "tuple_hash")]
+mod tuple_hash;
+
+#[cfg(feature = "tuple_hash")]
+pub use tuple_hash::TupleHash;
 
 pub trait Hasher: Clone {
     /// Absorb additional input. Can be called multiple times.
@@ -131,36 +155,38 @@ pub trait Hasher: Clone {
     fn finalize(self, output: &mut [u8]);
 }
 
+/// A function on bit strings in which the output can be extended to any
+/// function (XOF) desired length.
 pub trait XofReader {
     fn squeeze(&mut self, output: &mut [u8]);
 }
 
-/// Extendable output function.
-struct GenericXofReader<P> {
-    state: KeccakFamily<P>,
-    offset: usize,
-}
+///// Extendable output function.
+//struct GenericXofReader<P> {
+    //state: KeccakFamily<P>,
+    //offset: usize,
+//}
 
-impl<P: Permutation> XofReader for GenericXofReader<P> {
-    fn squeeze(&mut self, output: &mut [u8]) {
-        // second foldp
-        let mut op = 0;
-        let mut l = output.len();
-        let mut rate = self.state.rate - self.offset;
-        let mut offset = self.offset;
-        while l >= rate {
-            self.state.buffer.setout(&mut output[op..], offset, rate);
-            self.state.keccakf();
-            op += rate;
-            l -= rate;
-            rate = self.state.rate;
-            offset = 0;
-        }
+//impl<P: Permutation> XofReader for GenericXofReader<P> {
+    //fn squeeze(&mut self, output: &mut [u8]) {
+        //// second foldp
+        //let mut op = 0;
+        //let mut l = output.len();
+        //let mut rate = self.state.rate - self.offset;
+        //let mut offset = self.offset;
+        //while l >= rate {
+            //self.state.buffer.setout(&mut output[op..], offset, rate);
+            //self.state.keccakf();
+            //op += rate;
+            //l -= rate;
+            //rate = self.state.rate;
+            //offset = 0;
+        //}
 
-        self.state.buffer.setout(&mut output[op..], offset, l);
-        self.offset = offset + l;
-    }
-}
+        //self.state.buffer.setout(&mut output[op..], offset, l);
+        //self.offset = offset + l;
+    //}
+//}
 
 struct EncodedLen {
     offset: usize,
@@ -170,6 +196,30 @@ struct EncodedLen {
 impl EncodedLen {
     fn value(&self) -> &[u8] {
         &self.buffer[self.offset..]
+    }
+}
+
+fn left_encode(len: usize) -> EncodedLen {
+    let mut buffer = [0u8; 9];
+    buffer[1..].copy_from_slice(&(len as u64).to_be_bytes());
+    let offset = buffer.iter().position(|i| *i != 0).unwrap_or(8);
+    buffer[offset - 1] = 9 - offset as u8;
+
+    EncodedLen {
+        offset: offset - 1,
+        buffer,
+    }
+}
+
+fn right_encode(len: usize) -> EncodedLen {
+    let mut buffer = [0u8; 9];
+    buffer[..8].copy_from_slice(&(len as u64).to_be_bytes());
+    let offset = buffer.iter().position(|i| *i != 0).unwrap_or(7);
+    buffer[8] = 8 - offset as u8;
+
+    EncodedLen {
+        offset,
+        buffer,
     }
 }
 
@@ -325,52 +375,67 @@ trait Permutation {
     fn execute(a: &mut Buffer);
 }
 
-mod permutation {
-    #[cfg(any(
-            feature = "keccak", feature = "shake", feature = "sha3",
-            feature = "cshake", feature = "kmac", feature = "tuple_hash"
-    ))]
-    pub struct Standard;
+struct Standard;
 
-    #[cfg(any(
-            feature = "keccak", feature = "shake", feature = "sha3",
-            feature = "cshake", feature = "kmac", feature = "tuple_hash"
-    ))]
-    impl crate::Permutation for Standard {
-        fn execute(buffer: &mut crate::Buffer) {
-            const ROUNDS: usize = 24;
+impl Permutation for Standard {
+    fn execute(buffer: &mut Buffer) {
+        const ROUNDS: usize = 24;
 
-            const RC: [u64; ROUNDS] = [
-                1u64,
-                0x8082u64,
-                0x800000000000808au64,
-                0x8000000080008000u64,
-                0x808bu64,
-                0x80000001u64,
-                0x8000000080008081u64,
-                0x8000000000008009u64,
-                0x8au64,
-                0x88u64,
-                0x80008009u64,
-                0x8000000au64,
-                0x8000808bu64,
-                0x800000000000008bu64,
-                0x8000000000008089u64,
-                0x8000000000008003u64,
-                0x8000000000008002u64,
-                0x8000000000000080u64,
-                0x800au64,
-                0x800000008000000au64,
-                0x8000000080008081u64,
-                0x8000000000008080u64,
-                0x80000001u64,
-                0x8000000080008008u64,
-            ];
+        const RC: [u64; ROUNDS] = [
+            1u64,
+            0x8082u64,
+            0x800000000000808au64,
+            0x8000000080008000u64,
+            0x808bu64,
+            0x80000001u64,
+            0x8000000080008081u64,
+            0x8000000000008009u64,
+            0x8au64,
+            0x88u64,
+            0x80008009u64,
+            0x8000000au64,
+            0x8000808bu64,
+            0x800000000000008bu64,
+            0x8000000000008089u64,
+            0x8000000000008003u64,
+            0x8000000000008002u64,
+            0x8000000000000080u64,
+            0x800au64,
+            0x800000008000000au64,
+            0x8000000080008081u64,
+            0x8000000000008080u64,
+            0x80000001u64,
+            0x8000000080008008u64,
+        ];
 
-            // keccak-f[1600, 24]
-            keccak_function!(keccakf, ROUNDS, RC);
+        // keccak-f[1600, 24]
+        keccak_function!(keccakf, ROUNDS, RC);
 
-            keccakf(buffer.words());
-        }
+        keccakf(buffer.words());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{left_encode, right_encode};
+
+    #[test]
+    fn test_left_encode() {
+        assert_eq!(left_encode(0).value(), &[1, 0]);
+        assert_eq!(left_encode(128).value(), &[1, 128]);
+        assert_eq!(left_encode(65536).value(), &[3, 1, 0, 0]);
+        assert_eq!(left_encode(4096).value(), &[2, 16, 0]);
+        assert_eq!(left_encode(18446744073709551615).value(), &[8, 255, 255, 255, 255, 255, 255, 255, 255]);
+        assert_eq!(left_encode(54321).value(), &[2, 212, 49]);
+    }
+
+    #[test]
+    fn test_right_encode() {
+        assert_eq!(right_encode(0).value(), &[0, 1]);
+        assert_eq!(right_encode(128).value(), &[128, 1]);
+        assert_eq!(right_encode(65536).value(), &[1, 0, 0, 3]);
+        assert_eq!(right_encode(4096).value(), &[16, 0, 2]);
+        assert_eq!(right_encode(18446744073709551615).value(), &[255, 255, 255, 255, 255, 255, 255, 255, 8]);
+        assert_eq!(right_encode(54321).value(), &[212, 49, 2]);
     }
 }

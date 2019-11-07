@@ -1,10 +1,8 @@
-//! `KangarooTwelve`
-//!
-//! The KangarooTwelve extendable-output and hash function defined [`here`].
+//! The `KangarooTwelve` extendable-output and hash function defined [`here`].
 //!
 //! [`here`]: https://eprint.iacr.org/2016/770.pdf
 
-use super::{KeccakFamily, Permutation, Buffer, Hasher, EncodedLen};
+use crate::{KeccakFamily, Permutation, Buffer, Hasher, EncodedLen};
 
 const ROUNDS: usize = 12;
 const K12_RATE: usize = 168;
@@ -24,7 +22,7 @@ const RC: [u64; ROUNDS] = [
 	0x8000000080008008,
 ];
 
-/// keccak-f[1600, 12]
+// keccak-f[1600, 12]
 keccak_function!(keccakf, ROUNDS, RC);
 
 struct Reduced;
@@ -49,7 +47,9 @@ fn encode_len(len: usize) -> EncodedLen {
     }
 }
 
-/// `KangarooTwelve` implementation.
+/// The `KangarooTwelve` extendable-output and hash function defined [`here`].
+///
+/// [`here`]: https://eprint.iacr.org/2016/770.pdf
 #[derive(Clone)]
 pub struct KangarooTwelve<T> {
     state: KeccakFamily<Reduced>,
