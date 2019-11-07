@@ -5,7 +5,7 @@
 use crate::{KeccakFamily, Permutation, Buffer, Hasher, EncodedLen};
 
 const ROUNDS: usize = 12;
-const K12_RATE: usize = 168;
+const K12_RATE: usize = 200 - 128 / 4;
 
 const RC: [u64; ROUNDS] = [
 	0x000000008000808b,
@@ -62,7 +62,9 @@ pub struct KangarooTwelve<T> {
 impl<T> KangarooTwelve<T> {
     const MAX_CHUNK_SIZE: usize = 8192;
 
-    /// Returns the `KangarooTwelve` hasher initialized with a `custom_string`.
+    /// Creates  new [`KangarooTwelve`] hasher with a security level of 128 bits.
+    ///
+    /// [`KangarooTwelve`]: struct.KangarooTwelve.html
     pub fn new(custom_string: T) -> Self {
         KangarooTwelve {
             state: KeccakFamily::new(K12_RATE, 0),

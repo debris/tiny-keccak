@@ -11,18 +11,30 @@ pub struct Keccak {
 }
 
 impl Keccak  {
+    /// Creates  new [`Keccak`] hasher with a security level of 128 bits.
+    ///
+    /// [`Keccak`]: struct.Keccak.html
     pub fn v128() -> Keccak {
         Keccak::new(128)
     }
 
+    /// Creates  new [`Keccak`] hasher with a security level of 224 bits.
+    ///
+    /// [`Keccak`]: struct.Keccak.html
     pub fn v224() -> Keccak {
         Keccak::new(224)
     }
 
+    /// Creates  new [`Keccak`] hasher with a security level of 256 bits.
+    ///
+    /// [`Keccak`]: struct.Keccak.html
     pub fn v256() -> Keccak {
         Keccak::new(256)
     }
 
+    /// Creates  new [`Keccak`] hasher with a security level of 512 bits.
+    ///
+    /// [`Keccak`]: struct.Keccak.html
     pub fn v512() -> Keccak {
         Keccak::new(512)
     }

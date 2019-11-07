@@ -3,6 +3,16 @@
 //! # Example
 //!
 //! ```
+//! # use tiny_keccak::Hasher;
+//! #
+//! # fn foo<H: Hasher>(mut hasher: H) {
+//! let input_a = b"hello world";
+//! let input_b = b"!";
+//! let mut output = [0u8; 32];
+//! hasher.update(input_a);
+//! hasher.update(input_b);
+//! hasher.finalize(&mut output);
+//! # }
 //! ```
 //!
 //! # Credits
@@ -139,7 +149,7 @@ pub use cshake::CShake;
 mod kmac;
 
 #[cfg(feature = "kmac")]
-pub use kmac::KMac;
+pub use kmac::Kmac;
 
 #[cfg(feature = "tuple_hash")]
 mod tuple_hash;
@@ -147,6 +157,22 @@ mod tuple_hash;
 #[cfg(feature = "tuple_hash")]
 pub use tuple_hash::TupleHash;
 
+/// A trait for hashing an arbitrary stream of bytes.
+///
+/// # Example
+///
+/// ```
+/// # use tiny_keccak::Hasher;
+/// #
+/// # fn foo<H: Hasher>(mut hasher: H) {
+/// let input_a = b"hello world";
+/// let input_b = b"!";
+/// let mut output = [0u8; 32];
+/// hasher.update(input_a);
+/// hasher.update(input_b);
+/// hasher.finalize(&mut output);
+/// # }
+/// ```
 pub trait Hasher: Clone {
     /// Absorb additional input. Can be called multiple times.
     fn update(&mut self, input: &[u8]);
@@ -156,7 +182,7 @@ pub trait Hasher: Clone {
 }
 
 /// A function on bit strings in which the output can be extended to any
-/// function (XOF) desired length.
+/// function (`XOF`) desired length.
 pub trait XofReader {
     fn squeeze(&mut self, output: &mut [u8]);
 }

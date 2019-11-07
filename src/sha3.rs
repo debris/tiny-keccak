@@ -12,19 +12,16 @@ const SHA3_DELIM: u8 = 0x06;
 /// # use tiny_keccak::{Hasher, Sha3};
 /// #
 /// # fn main() {
-/// let mut sha3 = Sha3::v256();
+/// let input = b"hello world";
 /// let mut output = [0; 32];
-/// sha3.update(b"hello world");
+/// let expected = b"\
+///     \x64\x4b\xcc\x7e\x56\x43\x73\x04\x09\x99\xaa\xc8\x9e\x76\x22\xf3\
+///     \xca\x71\xfb\xa1\xd9\x72\xfd\x94\xa3\x1c\x3b\xfb\xf2\x4e\x39\x38\
+/// ";
+/// let mut sha3 = Sha3::v256();
+/// sha3.update(input);
 /// sha3.finalize(&mut output);
-///
-/// let expected = [
-///     0x64, 0x4b, 0xcc, 0x7e, 0x56, 0x43, 0x73, 0x04,
-///     0x09, 0x99, 0xaa, 0xc8, 0x9e, 0x76, 0x22, 0xf3,
-///     0xca, 0x71, 0xfb, 0xa1, 0xd9, 0x72, 0xfd, 0x94,
-///     0xa3, 0x1c, 0x3b, 0xfb, 0xf2, 0x4e, 0x39, 0x38
-/// ];
-///
-/// assert_eq!(expected, output);
+/// assert_eq!(expected, &output);
 /// # }
 /// ```
 #[derive(Clone)]
@@ -33,18 +30,30 @@ pub struct Sha3 {
 }
 
 impl Sha3 {
+    /// Creates  new [`Sha3`] hasher with a security level of 128 bits.
+    ///
+    /// [`Sha3`]: struct.Sha3.html
     pub fn v128() -> Sha3 {
         Sha3::new(128)
     }
 
+    /// Creates  new [`Sha3`] hasher with a security level of 224 bits.
+    ///
+    /// [`Sha3`]: struct.Sha3.html
     pub fn v224() -> Sha3 {
         Sha3::new(224)
     }
 
+    /// Creates  new [`Sha3`] hasher with a security level of 256 bits.
+    ///
+    /// [`Sha3`]: struct.Sha3.html
     pub fn v256() -> Sha3 {
         Sha3::new(256)
     }
 
+    /// Creates  new [`Sha3`] hasher with a security level of 512 bits.
+    ///
+    /// [`Sha3`]: struct.Sha3.html
     pub fn v512() -> Sha3 {
         Sha3::new(512)
     }

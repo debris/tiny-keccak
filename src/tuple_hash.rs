@@ -9,10 +9,16 @@ pub struct TupleHash {
 }
 
 impl TupleHash {
+    /// Creates  new [`TupleHash`] hasher with a security level of 128 bits.
+    ///
+    /// [`TupleHash`]: struct.TupleHash.html
     pub fn v128(custom_string: &[u8]) -> TupleHash {
         TupleHash::new(custom_string, 128)
     }
 
+    /// Creates  new [`TupleHash`] hasher with a security level of 256 bits.
+    ///
+    /// [`TupleHash`]: struct.TupleHash.html
     pub fn v256(custom_string: &[u8]) -> TupleHash {
         TupleHash::new(custom_string, 256)
     }

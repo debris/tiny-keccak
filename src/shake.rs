@@ -11,10 +11,16 @@ pub struct Shake {
 }
 
 impl Shake {
+    /// Creates  new [`Shake`] hasher with a security level of 128 bits.
+    ///
+    /// [`Shake`]: struct.Shake.html
     pub fn v128() -> Shake {
         Shake::new(128)
     }
 
+    /// Creates  new [`Shake`] hasher with a security level of 256 bits.
+    ///
+    /// [`Shake`]: struct.Shake.html
     pub fn v256() -> Shake {
         Shake::new(256)
     }

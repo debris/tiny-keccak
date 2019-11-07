@@ -15,10 +15,16 @@ pub struct CShake {
 }
 
 impl CShake {
+    /// Creates  new [`CShake`] hasher with a security level of 128 bits.
+    ///
+    /// [`CShake`]: struct.CShake.html
     pub fn v128(name: &[u8], custom_string: &[u8]) -> CShake {
         CShake::new(name, custom_string, 128)
     }
 
+    /// Creates  new [`CShake`] hasher with a security level of 256 bits.
+    ///
+    /// [`CShake`]: struct.CShake.html
     pub fn v256(name: &[u8], custom_string: &[u8]) -> CShake {
         CShake::new(name, custom_string, 256)
     }
