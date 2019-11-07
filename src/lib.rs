@@ -46,7 +46,8 @@ const PI: [usize; 24] = [
 const WORDS: usize = 25;
 
 macro_rules! keccak_function {
-    ($name: ident, $rounds: expr, $rc: expr) => {
+    ($doc: expr, $name: ident, $rounds: expr, $rc: expr) => {
+        #[doc = $doc]
         #[allow(unused_assignments)]
         #[allow(non_upper_case_globals)]
         pub fn $name(a: &mut [u64; $crate::WORDS]) {
@@ -116,6 +117,32 @@ macro_rules! keccak_function {
 }
 
 #[cfg(feature = "k12")]
+mod keccakp;
+
+#[cfg(feature = "k12")]
+pub use keccakp::keccakp;
+
+#[cfg(any(
+    feature = "keccak",
+    feature = "shake",
+    feature = "sha3",
+    feature = "cshake",
+    feature = "kmac",
+    feature = "tuple_hash"
+))]
+mod keccakf;
+
+#[cfg(any(
+    feature = "keccak",
+    feature = "shake",
+    feature = "sha3",
+    feature = "cshake",
+    feature = "kmac",
+    feature = "tuple_hash"
+))]
+pub use keccakf::keccakf;
+
+#[cfg(feature = "k12")]
 mod k12;
 
 #[cfg(feature = "k12")]
@@ -183,36 +210,9 @@ pub trait Hasher: Clone {
 
 /// A function on bit strings in which the output can be extended to any
 /// function (`XOF`) desired length.
-pub trait XofReader {
+pub trait Xof {
     fn squeeze(&mut self, output: &mut [u8]);
 }
-
-///// Extendable output function.
-//struct GenericXofReader<P> {
-//state: KeccakFamily<P>,
-//offset: usize,
-//}
-
-//impl<P: Permutation> XofReader for GenericXofReader<P> {
-//fn squeeze(&mut self, output: &mut [u8]) {
-//// second foldp
-//let mut op = 0;
-//let mut l = output.len();
-//let mut rate = self.state.rate - self.offset;
-//let mut offset = self.offset;
-//while l >= rate {
-//self.state.buffer.setout(&mut output[op..], offset, rate);
-//self.state.keccakf();
-//op += rate;
-//l -= rate;
-//rate = self.state.rate;
-//offset = 0;
-//}
-
-//self.state.buffer.setout(&mut output[op..], offset, l);
-//self.offset = offset + l;
-//}
-//}
 
 struct EncodedLen {
     offset: usize,
@@ -304,7 +304,11 @@ impl Buffer {
     }
 }
 
-struct KeccakFamily<P> {
+trait Permutation {
+    fn execute(a: &mut Buffer);
+}
+
+struct KeccakState<P> {
     buffer: Buffer,
     offset: usize,
     rate: usize,
@@ -312,9 +316,9 @@ struct KeccakFamily<P> {
     permutation: core::marker::PhantomData<P>,
 }
 
-impl<P> Clone for KeccakFamily<P> {
+impl<P> Clone for KeccakState<P> {
     fn clone(&self) -> Self {
-        KeccakFamily {
+        KeccakState {
             buffer: self.buffer.clone(),
             offset: self.offset,
             rate: self.rate,
@@ -324,10 +328,10 @@ impl<P> Clone for KeccakFamily<P> {
     }
 }
 
-impl<P: Permutation> KeccakFamily<P> {
+impl<P: Permutation> KeccakState<P> {
     fn new(rate: usize, delim: u8) -> Self {
         assert!(rate != 0, "rate cannot be equal 0");
-        KeccakFamily {
+        KeccakState {
             buffer: Buffer::default(),
             offset: 0,
             rate,
@@ -336,7 +340,7 @@ impl<P: Permutation> KeccakFamily<P> {
         }
     }
 
-    fn keccakf(&mut self) {
+    fn keccak(&mut self) {
         P::execute(&mut self.buffer);
     }
 
@@ -348,7 +352,7 @@ impl<P: Permutation> KeccakFamily<P> {
         let mut offset = self.offset;
         while l >= rate {
             self.buffer.xorin(&input[ip..], offset, rate);
-            self.keccakf();
+            self.keccak();
             ip += rate;
             l -= rate;
             rate = self.rate;
@@ -370,7 +374,7 @@ impl<P: Permutation> KeccakFamily<P> {
         let mut l = output.len();
         while l >= self.rate {
             self.buffer.setout(&mut output[op..], 0, self.rate);
-            self.keccakf();
+            self.keccak();
             op += self.rate;
             l -= self.rate;
         }
@@ -381,15 +385,15 @@ impl<P: Permutation> KeccakFamily<P> {
     fn finalize(mut self, output: &mut [u8]) {
         self.pad();
 
-        // apply keccakf
-        self.keccakf();
+        // apply keccak
+        self.keccak();
 
         // squeeze output
         self.squeeze(output);
     }
 
     fn fill_block(&mut self) {
-        self.keccakf();
+        self.keccak();
         self.offset = 0;
     }
 
@@ -399,47 +403,58 @@ impl<P: Permutation> KeccakFamily<P> {
     }
 }
 
-trait Permutation {
-    fn execute(a: &mut Buffer);
+/// eXtendable Output Function (XOF).
+struct KeccakXof<P> {
+    state: KeccakState<P>,
+    offset: usize,
 }
 
-struct Standard;
+impl<P> Clone for KeccakXof<P> {
+    fn clone(&self) -> Self {
+        KeccakXof {
+            state: self.state.clone(),
+            offset: self.offset,
+        }
+    }
+}
 
-impl Permutation for Standard {
-    fn execute(buffer: &mut Buffer) {
-        const ROUNDS: usize = 24;
+impl<P: Permutation> KeccakXof<P> {
+    fn new(rate: usize, delim: u8) -> Self {
+        KeccakXof {
+            state: KeccakState::new(rate, delim),
+            offset: 0,
+        }
+    }
 
-        const RC: [u64; ROUNDS] = [
-            1u64,
-            0x8082u64,
-            0x800000000000808au64,
-            0x8000000080008000u64,
-            0x808bu64,
-            0x80000001u64,
-            0x8000000080008081u64,
-            0x8000000000008009u64,
-            0x8au64,
-            0x88u64,
-            0x80008009u64,
-            0x8000000au64,
-            0x8000808bu64,
-            0x800000000000008bu64,
-            0x8000000000008089u64,
-            0x8000000000008003u64,
-            0x8000000000008002u64,
-            0x8000000000000080u64,
-            0x800au64,
-            0x800000008000000au64,
-            0x8000000080008081u64,
-            0x8000000000008080u64,
-            0x80000001u64,
-            0x8000000080008008u64,
-        ];
+    fn squeeze(&mut self, output: &mut [u8]) {
+        // second foldp
+        let mut op = 0;
+        let mut l = output.len();
+        let mut rate = self.state.rate - self.offset;
+        let mut offset = self.offset;
+        while l >= rate {
+            self.state.buffer.setout(&mut output[op..], offset, rate);
+            self.state.keccak();
+            op += rate;
+            l -= rate;
+            rate = self.state.rate;
+            offset = 0;
+        }
 
-        // keccak-f[1600, 24]
-        keccak_function!(keccakf, ROUNDS, RC);
+        self.state.buffer.setout(&mut output[op..], offset, l);
+        self.offset = offset + l;
+    }
 
-        keccakf(buffer.words());
+    fn update(&mut self, input: &[u8]) {
+        self.state.update(input);
+    }
+
+    fn finalize(self, output: &mut [u8]) {
+        self.state.finalize(output);
+    }
+
+    fn fill_block(&mut self) {
+        self.state.fill_block();
     }
 }
 

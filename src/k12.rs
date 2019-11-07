@@ -2,36 +2,7 @@
 //!
 //! [`here`]: https://eprint.iacr.org/2016/770.pdf
 
-use crate::{bits_to_rate, Buffer, EncodedLen, Hasher, KeccakFamily, Permutation};
-
-const ROUNDS: usize = 12;
-
-const RC: [u64; ROUNDS] = [
-    0x000000008000808b,
-    0x800000000000008b,
-    0x8000000000008089,
-    0x8000000000008003,
-    0x8000000000008002,
-    0x8000000000000080,
-    0x000000000000800a,
-    0x800000008000000a,
-    0x8000000080008081,
-    0x8000000000008080,
-    0x0000000080000001,
-    0x8000000080008008,
-];
-
-// keccak-f[1600, 12]
-keccak_function!(keccakf, ROUNDS, RC);
-
-struct Reduced;
-
-impl Permutation for Reduced {
-    #[inline]
-    fn execute(buffer: &mut Buffer) {
-        keccakf(buffer.words());
-    }
-}
+use crate::{bits_to_rate, keccakp::KeccakP, EncodedLen, Hasher, KeccakState};
 
 fn encode_len(len: usize) -> EncodedLen {
     let len_view = (len as u64).to_be_bytes();
@@ -48,8 +19,8 @@ fn encode_len(len: usize) -> EncodedLen {
 /// [`here`]: https://eprint.iacr.org/2016/770.pdf
 #[derive(Clone)]
 pub struct KangarooTwelve<T> {
-    state: KeccakFamily<Reduced>,
-    current_chunk: KeccakFamily<Reduced>,
+    state: KeccakState<KeccakP>,
+    current_chunk: KeccakState<KeccakP>,
     custom_string: Option<T>,
     written: usize,
     chunks: usize,
@@ -64,8 +35,8 @@ impl<T> KangarooTwelve<T> {
     pub fn new(custom_string: T) -> Self {
         let rate = bits_to_rate(128);
         KangarooTwelve {
-            state: KeccakFamily::new(rate, 0),
-            current_chunk: KeccakFamily::new(rate, 0x0b),
+            state: KeccakState::new(rate, 0),
+            current_chunk: KeccakState::new(rate, 0x0b),
             custom_string: Some(custom_string),
             written: 0,
             chunks: 0,

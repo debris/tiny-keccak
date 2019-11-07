@@ -2,19 +2,19 @@
 //!
 //! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 
-use crate::{bits_to_rate, left_encode, Hasher, KeccakFamily, Standard};
-
-const CSHAKE_DELIM: u8 = 0x04;
+use crate::{bits_to_rate, keccakf::KeccakF, left_encode, Hasher, KeccakXof, Xof};
 
 /// The `cSHAKE` extendable-output functions defined in [`SP800-185`].
 ///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 #[derive(Clone)]
 pub struct CShake {
-    state: KeccakFamily<Standard>,
+    state: KeccakXof<KeccakF>,
 }
 
 impl CShake {
+    const DELIM: u8 = 0x04;
+
     /// Creates  new [`CShake`] hasher with a security level of 128 bits.
     ///
     /// [`CShake`]: struct.CShake.html
@@ -31,7 +31,7 @@ impl CShake {
 
     pub(crate) fn new(name: &[u8], custom_string: &[u8], bits: usize) -> CShake {
         let rate = bits_to_rate(bits);
-        let mut state = KeccakFamily::new(rate, CSHAKE_DELIM);
+        let mut state = KeccakXof::new(rate, Self::DELIM);
         state.update(left_encode(rate).value());
         state.update(left_encode(name.len() * 8).value());
         state.update(name);
@@ -48,10 +48,16 @@ impl CShake {
 
 impl Hasher for CShake {
     fn update(&mut self, input: &[u8]) {
-        self.state.update(input)
+        self.state.update(input);
     }
 
     fn finalize(self, output: &mut [u8]) {
-        self.state.finalize(output)
+        self.state.finalize(output);
+    }
+}
+
+impl Xof for CShake {
+    fn squeeze(&mut self, output: &mut [u8]) {
+        self.state.squeeze(output);
     }
 }

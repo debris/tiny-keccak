@@ -1,4 +1,4 @@
-use crate::{bits_to_rate, Hasher, KeccakFamily, Standard};
+use crate::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakXof, Xof};
 
 const SHAKE_DELIM: u8 = 0x1f;
 
@@ -7,7 +7,7 @@ const SHAKE_DELIM: u8 = 0x1f;
 /// [`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
 #[derive(Clone)]
 pub struct Shake {
-    state: KeccakFamily<Standard>,
+    state: KeccakXof<KeccakF>,
 }
 
 impl Shake {
@@ -27,7 +27,7 @@ impl Shake {
 
     fn new(bits: usize) -> Shake {
         Shake {
-            state: KeccakFamily::new(bits_to_rate(bits), SHAKE_DELIM),
+            state: KeccakXof::new(bits_to_rate(bits), SHAKE_DELIM),
         }
     }
 }
@@ -39,5 +39,11 @@ impl Hasher for Shake {
 
     fn finalize(self, output: &mut [u8]) {
         self.state.finalize(output);
+    }
+}
+
+impl Xof for Shake {
+    fn squeeze(&mut self, output: &mut [u8]) {
+        self.state.squeeze(output)
     }
 }

@@ -1,6 +1,4 @@
-use crate::{bits_to_rate, Hasher, KeccakFamily, Standard};
-
-const SHA3_DELIM: u8 = 0x06;
+use crate::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakState};
 
 /// The `SHA3` hash functions defined in [`FIPS-202`].
 ///
@@ -26,16 +24,11 @@ const SHA3_DELIM: u8 = 0x06;
 /// ```
 #[derive(Clone)]
 pub struct Sha3 {
-    state: KeccakFamily<Standard>,
+    state: KeccakState<KeccakF>,
 }
 
 impl Sha3 {
-    /// Creates  new [`Sha3`] hasher with a security level of 128 bits.
-    ///
-    /// [`Sha3`]: struct.Sha3.html
-    pub fn v128() -> Sha3 {
-        Sha3::new(128)
-    }
+    const DELIM: u8 = 0x06;
 
     /// Creates  new [`Sha3`] hasher with a security level of 224 bits.
     ///
@@ -51,6 +44,13 @@ impl Sha3 {
         Sha3::new(256)
     }
 
+    /// Creates  new [`Sha3`] hasher with a security level of 384 bits.
+    ///
+    /// [`Sha3`]: struct.Sha3.html
+    pub fn v384() -> Sha3 {
+        Sha3::new(384)
+    }
+
     /// Creates  new [`Sha3`] hasher with a security level of 512 bits.
     ///
     /// [`Sha3`]: struct.Sha3.html
@@ -60,7 +60,7 @@ impl Sha3 {
 
     fn new(bits: usize) -> Sha3 {
         Sha3 {
-            state: KeccakFamily::new(bits_to_rate(bits), SHA3_DELIM),
+            state: KeccakState::new(bits_to_rate(bits), Self::DELIM),
         }
     }
 }

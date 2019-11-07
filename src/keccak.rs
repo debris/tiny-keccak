@@ -1,22 +1,15 @@
 //! The `Keccak` hash functions.
 
-use super::{bits_to_rate, Hasher, KeccakFamily, Standard};
-
-const KECCAK_DELIM: u8 = 0x01;
+use super::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakState};
 
 /// The `Keccak` hash functions.
 #[derive(Clone)]
 pub struct Keccak {
-    state: KeccakFamily<Standard>,
+    state: KeccakState<KeccakF>,
 }
 
 impl Keccak {
-    /// Creates  new [`Keccak`] hasher with a security level of 128 bits.
-    ///
-    /// [`Keccak`]: struct.Keccak.html
-    pub fn v128() -> Keccak {
-        Keccak::new(128)
-    }
+    const DELIM: u8 = 0x01;
 
     /// Creates  new [`Keccak`] hasher with a security level of 224 bits.
     ///
@@ -32,6 +25,13 @@ impl Keccak {
         Keccak::new(256)
     }
 
+    /// Creates  new [`Keccak`] hasher with a security level of 384 bits.
+    ///
+    /// [`Keccak`]: struct.Keccak.html
+    pub fn v384() -> Keccak {
+        Keccak::new(384)
+    }
+
     /// Creates  new [`Keccak`] hasher with a security level of 512 bits.
     ///
     /// [`Keccak`]: struct.Keccak.html
@@ -41,7 +41,7 @@ impl Keccak {
 
     fn new(bits: usize) -> Keccak {
         Keccak {
-            state: KeccakFamily::new(bits_to_rate(bits), KECCAK_DELIM),
+            state: KeccakState::new(bits_to_rate(bits), Self::DELIM),
         }
     }
 }

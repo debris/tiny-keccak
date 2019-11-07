@@ -1,4 +1,4 @@
-use crate::{left_encode, right_encode, CShake, Hasher};
+use crate::{left_encode, right_encode, CShake, Hasher, Xof};
 
 /// The `TupleHash` extendable-output and hash functions defined in [`SP800-185`].
 ///
@@ -6,6 +6,7 @@ use crate::{left_encode, right_encode, CShake, Hasher};
 #[derive(Clone)]
 pub struct TupleHash {
     state: CShake,
+    xof_started: bool,
 }
 
 impl TupleHash {
@@ -26,6 +27,7 @@ impl TupleHash {
     fn new(custom_string: &[u8], bits: usize) -> TupleHash {
         TupleHash {
             state: CShake::new(b"TupleHash", custom_string, bits),
+            xof_started: false,
         }
     }
 }
@@ -39,5 +41,16 @@ impl Hasher for TupleHash {
     fn finalize(mut self, output: &mut [u8]) {
         self.state.update(right_encode(output.len() * 8).value());
         self.state.finalize(output)
+    }
+}
+
+impl Xof for TupleHash {
+    fn squeeze(&mut self, output: &mut [u8]) {
+        if !self.xof_started {
+            self.xof_started = true;
+            self.state.update(right_encode(0).value());
+        }
+
+        self.state.squeeze(output)
     }
 }
