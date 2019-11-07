@@ -1,24 +1,27 @@
-//! An implementation of sha3, shake, keccak and KangarooTwelve functions.
+//! Keccak derived functions specified in [`FIPS-202`] and [`SP800-185`]
 //!
-//! ## Usage
+//! # Example
 //!
-//! Add this to your `Cargo.toml`:
-//!
-//! ```toml
-//! [dependencies]
-//! tiny-keccak = "1.5"
+//! ```
 //! ```
 //!
-//! ## Features
-//! - keccak (enabled by default)
-//! - k12 (**not** enabled by default, implements KangarooTwelve)
+//! # Credits
 //!
-//! Inspired by implementations:
-//! - [keccak-tiny](https://github.com/coruus/keccak-tiny)
-//! - [GoKangarooTwelve](https://github.com/mimoo/GoKangarooTwelve)
+//! `tiny-keccak` was heavily inspsired by the following libraries:
 //!
-//! License: CC0, attribution kindly requested. Blame taken too,
+//! - [`keccak-tiny`]
+//! - [`GoKangarooTwelve`]
+//! - [`quininer/sp800-185`]
+//!
+//! License: [`CC0`], attribution kindly requested. Blame taken too,
 //! but not liability.
+//!
+//! [`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
+//! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+//! [`keccak-tiny`]: https://github.com/coruus/keccak-tiny
+//! [`GoKangarooTwelve`]: https://github.com/mimoo/GoKangarooTwelve
+//! [`quininer/sp800-185`]: https://github.com/quininer/sp800-185
+//! [`CC0`]: https://github.com/debris/tiny-keccak/blob/master/LICENSE
 
 #![no_std]
 
@@ -34,7 +37,6 @@ const WORDS: usize = 25;
 
 macro_rules! keccak_function {
     ($name: ident, $rounds: expr, $rc: expr) => {
-
         #[allow(unused_assignments)]
         #[allow(non_upper_case_globals)]
         pub fn $name(a: &mut [u64; $crate::WORDS]) {
@@ -104,19 +106,71 @@ macro_rules! keccak_function {
 }
 
 #[cfg(feature = "k12")]
-mod kangaroo;
-
-#[cfg(feature = "keccak")]
-mod keccak;
+mod k12;
 
 #[cfg(feature = "k12")]
-pub use kangaroo::{k12, KangarooTwelve, keccakf as keccakf12};
+pub use k12::KangarooTwelve;
 
-#[cfg(feature = "keccak")]
-pub use keccak::*;
+#[cfg(feature = "fips202")]
+mod fips202;
 
-trait Permutation {
-    fn execute(a: &mut Buffer);
+#[cfg(feature = "fips202")]
+pub use fips202::*;
+
+#[cfg(feature = "sp800")]
+mod sp800;
+
+#[cfg(feature = "sp800")]
+pub use sp800::*;
+
+pub trait Hasher: Clone {
+    /// Absorb additional input. Can be called multiple times.
+    fn update(&mut self, input: &[u8]);
+
+    /// Pad and squeeze the state to the output.
+    fn finalize(self, output: &mut [u8]);
+}
+
+pub trait XofReader {
+    fn squeeze(&mut self, output: &mut [u8]);
+}
+
+/// Extendable output function.
+struct GenericXofReader<P> {
+    state: KeccakFamily<P>,
+    offset: usize,
+}
+
+impl<P: Permutation> XofReader for GenericXofReader<P> {
+    fn squeeze(&mut self, output: &mut [u8]) {
+        // second foldp
+        let mut op = 0;
+        let mut l = output.len();
+        let mut rate = self.state.rate - self.offset;
+        let mut offset = self.offset;
+        while l >= rate {
+            self.state.buffer.setout(&mut output[op..], offset, rate);
+            self.state.keccakf();
+            op += rate;
+            l -= rate;
+            rate = self.state.rate;
+            offset = 0;
+        }
+
+        self.state.buffer.setout(&mut output[op..], offset, l);
+        self.offset = offset + l;
+    }
+}
+
+struct EncodedLen {
+    offset: usize,
+    buffer: [u8; 9],
+}
+
+impl EncodedLen {
+    fn value(&self) -> &[u8] {
+        &self.buffer[self.offset..]
+    }
 }
 
 #[derive(Default, Clone)]
@@ -259,5 +313,64 @@ impl <P: Permutation> KeccakFamily<P> {
 
         // squeeze output
         self.squeeze(output);
+    }
+
+    fn fill_block(&mut self) {
+        self.keccakf();
+        self.offset = 0;
+    }
+}
+
+trait Permutation {
+    fn execute(a: &mut Buffer);
+}
+
+mod permutation {
+    #[cfg(any(
+            feature = "keccak", feature = "shake", feature = "sha3",
+            feature = "cshake", feature = "kmac", feature = "tuple_hash"
+    ))]
+    pub struct Standard;
+
+    #[cfg(any(
+            feature = "keccak", feature = "shake", feature = "sha3",
+            feature = "cshake", feature = "kmac", feature = "tuple_hash"
+    ))]
+    impl crate::Permutation for Standard {
+        fn execute(buffer: &mut crate::Buffer) {
+            const ROUNDS: usize = 24;
+
+            const RC: [u64; ROUNDS] = [
+                1u64,
+                0x8082u64,
+                0x800000000000808au64,
+                0x8000000080008000u64,
+                0x808bu64,
+                0x80000001u64,
+                0x8000000080008081u64,
+                0x8000000000008009u64,
+                0x8au64,
+                0x88u64,
+                0x80008009u64,
+                0x8000000au64,
+                0x8000808bu64,
+                0x800000000000008bu64,
+                0x8000000000008089u64,
+                0x8000000000008003u64,
+                0x8000000000008002u64,
+                0x8000000000000080u64,
+                0x800au64,
+                0x800000008000000au64,
+                0x8000000080008081u64,
+                0x8000000000008080u64,
+                0x80000001u64,
+                0x8000000080008008u64,
+            ];
+
+            // keccak-f[1600, 24]
+            keccak_function!(keccakf, ROUNDS, RC);
+
+            keccakf(buffer.words());
+        }
     }
 }

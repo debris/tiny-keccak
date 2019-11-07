@@ -1,11 +1,11 @@
-use tiny_keccak::*;
+use tiny_keccak::{Hasher, KangarooTwelve};
 
 fn pattern(len: usize) -> Vec<u8> {
     (0..len).map(|j| (j % 251) as u8).collect()
 }
 
 fn test_kangaroo_twelve<A: AsRef<[u8]>, B: AsRef<[u8]>>(custom_string: A, message: B, output_len: usize, expected: &[u8]) {
-    let mut kangaroo = KangarooTwelve::new(custom_string);
+    let mut kangaroo = KangarooTwelve::new(custom_string.as_ref());
     kangaroo.update(message.as_ref());
     let mut res = vec![0; output_len];
     kangaroo.finalize(&mut res);

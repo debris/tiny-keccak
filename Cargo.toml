@@ -27,13 +27,24 @@ members = ["comparison"]
 travis-ci = { repository = "debris/tiny-keccak", branch = "master"}
 
 [features]
-default = ["keccak"]
-keccak = []
+default = []
+cshake = []
+fips202 = ["keccak", "shake", "sha3"]
 k12 = []
+keccak = []
+kmac = ["cshake"]
+sha3 = []
+shake = []
+sp800 = ["cshake", "kmac", "tuple_hash"]
+tuple_hash = ["cshake"]
 
 [[test]]
 name = "keccak"
-required-features = ["keccak"]
+required-features = ["fips202"]
+
+[[test]]
+name = "sp800"
+required-features = ["sp800"]
 
 [[test]]
 name = "kangaroo"

@@ -1,4 +1,10 @@
-use super::{KeccakFamily, Permutation, Buffer};
+//! `KangarooTwelve`
+//!
+//! The KangarooTwelve extendable-output and hash function defined [`here`].
+//!
+//! [`here`]: https://eprint.iacr.org/2016/770.pdf
+
+use super::{KeccakFamily, Permutation, Buffer, Hasher, EncodedLen};
 
 const ROUNDS: usize = 12;
 const K12_RATE: usize = 168;
@@ -30,39 +36,20 @@ impl Permutation for Reduced {
     }
 }
 
-/// KangarooTwelve's length encoding.
-struct EncodedLen {
-    offset: usize,
-    buffer: [u8; 9],
-}
+fn encode_len(len: usize) -> EncodedLen {
+    let len_view = (len as u64).to_be_bytes();
+    let offset = len_view.iter().position(|i| *i != 0).unwrap_or(8);
+    let mut buffer = [0u8; 9];
+    buffer[..8].copy_from_slice(&len_view);
+    buffer[8] = 8 - offset as u8;
 
-impl EncodedLen {
-    fn new(len: usize) -> Self {
-        let len_view = (len as u64).to_be_bytes();
-        let offset = len_view.iter().position(|i| *i != 0).unwrap_or(8);
-        let mut buffer = [0u8; 9];
-        buffer[..8].copy_from_slice(&len_view);
-        buffer[8] = 8 - offset as u8;
-
-        EncodedLen {
-            offset,
-            buffer,
-        }
-    }
-
-    fn value(&self) -> &[u8] {
-        &self.buffer[self.offset..]
+    EncodedLen {
+        offset,
+        buffer,
     }
 }
 
-/// Hashes the data with `KangarooTwelve` hash function using custom string.
-pub fn k12(custom_string: &[u8], data: &[u8], result: &mut [u8]) {
-    let mut k12 = KangarooTwelve::new(custom_string);
-    k12.update(data);
-    k12.finalize(result);
-}
-
-/// KangarooTwelve implementation.
+/// `KangarooTwelve` implementation.
 #[derive(Clone)]
 pub struct KangarooTwelve<T> {
     state: KeccakFamily<Reduced>,
@@ -72,9 +59,10 @@ pub struct KangarooTwelve<T> {
     chunks: usize,
 }
 
-impl<T: AsRef<[u8]>> KangarooTwelve<T> {
+impl<T> KangarooTwelve<T> {
     const MAX_CHUNK_SIZE: usize = 8192;
 
+    /// Returns the `KangarooTwelve` hasher initialized with a `custom_string`.
     pub fn new(custom_string: T) -> Self {
         KangarooTwelve {
             state: KeccakFamily::new(K12_RATE, 0),
@@ -84,8 +72,10 @@ impl<T: AsRef<[u8]>> KangarooTwelve<T> {
             chunks: 0,
         }
     }
+}
 
-    pub fn update(&mut self, input: &[u8]) {
+impl<T: AsRef<[u8]> + Clone> Hasher for KangarooTwelve<T> {
+    fn update(&mut self, input: &[u8]) {
         let mut to_absorb = input;
         if self.chunks == 0 {
             let todo = core::cmp::min(Self::MAX_CHUNK_SIZE - self.written, to_absorb.len());
@@ -117,17 +107,17 @@ impl<T: AsRef<[u8]>> KangarooTwelve<T> {
         }
     }
 
-    pub fn finalize(mut self, output: &mut [u8]) {
+    fn finalize(mut self, output: &mut [u8]) {
         let custom_string = self.custom_string.take()
             .expect("KangarooTwelve cannot be initialized without custom_string; qed");
-        let encoded_len = EncodedLen::new(custom_string.as_ref().len());
+        let encoded_len = encode_len(custom_string.as_ref().len());
         self.update(custom_string.as_ref());
         self.update(encoded_len.value());
 
         if self.chunks == 0 {
             self.state.delim = 0x07;
         } else {
-            let encoded_chunks = EncodedLen::new(self.chunks);
+            let encoded_chunks = encode_len(self.chunks);
             let mut tmp_chunk = [0u8; 32];
             self.current_chunk.finalize(&mut tmp_chunk);
             self.state.update(&tmp_chunk);
