@@ -425,7 +425,6 @@ mod tests {
         assert_eq!(left_encode(128).value(), &[1, 128]);
         assert_eq!(left_encode(65536).value(), &[3, 1, 0, 0]);
         assert_eq!(left_encode(4096).value(), &[2, 16, 0]);
-        assert_eq!(left_encode(18446744073709551615).value(), &[8, 255, 255, 255, 255, 255, 255, 255, 255]);
         assert_eq!(left_encode(54321).value(), &[2, 212, 49]);
     }
 
@@ -435,7 +434,6 @@ mod tests {
         assert_eq!(right_encode(128).value(), &[128, 1]);
         assert_eq!(right_encode(65536).value(), &[1, 0, 0, 3]);
         assert_eq!(right_encode(4096).value(), &[16, 0, 2]);
-        assert_eq!(right_encode(18446744073709551615).value(), &[255, 255, 255, 255, 255, 255, 255, 255, 8]);
         assert_eq!(right_encode(54321).value(), &[212, 49, 2]);
     }
 }
