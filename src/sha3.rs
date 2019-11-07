@@ -1,4 +1,4 @@
-use crate::{Hasher, KeccakFamily, Standard};
+use crate::{bits_to_rate, Hasher, KeccakFamily, Standard};
 
 const SHA3_DELIM: u8 = 0x06;
 
@@ -60,7 +60,7 @@ impl Sha3 {
 
     fn new(bits: usize) -> Sha3 {
         Sha3 {
-            state: KeccakFamily::new(200 - bits / 4, SHA3_DELIM),
+            state: KeccakFamily::new(bits_to_rate(bits), SHA3_DELIM),
         }
     }
 }

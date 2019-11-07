@@ -1,6 +1,6 @@
 //! The `Keccak` hash functions.
 
-use super::{Hasher, KeccakFamily, Standard};
+use super::{bits_to_rate, Hasher, KeccakFamily, Standard};
 
 const KECCAK_DELIM: u8 = 0x01;
 
@@ -41,7 +41,7 @@ impl Keccak {
 
     fn new(bits: usize) -> Keccak {
         Keccak {
-            state: KeccakFamily::new(200 - bits / 4, KECCAK_DELIM),
+            state: KeccakFamily::new(bits_to_rate(bits), KECCAK_DELIM),
         }
     }
 }

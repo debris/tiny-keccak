@@ -392,6 +392,11 @@ impl<P: Permutation> KeccakFamily<P> {
         self.keccakf();
         self.offset = 0;
     }
+
+    fn reset(&mut self) {
+        self.buffer = Buffer::default();
+        self.offset = 0;
+    }
 }
 
 trait Permutation {
@@ -436,6 +441,10 @@ impl Permutation for Standard {
 
         keccakf(buffer.words());
     }
+}
+
+fn bits_to_rate(bits: usize) -> usize {
+    200 - bits / 4
 }
 
 #[cfg(test)]

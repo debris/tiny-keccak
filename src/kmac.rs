@@ -1,4 +1,4 @@
-use crate::{left_encode, right_encode, CShake, Hasher};
+use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher};
 
 /// The `KMAC` pseudo-random functions defined in [`SP800-185`].
 ///
@@ -24,7 +24,7 @@ impl Kmac {
     }
 
     fn new(key: &[u8], custom_string: &[u8], bits: usize) -> Kmac {
-        let rate = 200 - bits / 4;
+        let rate = bits_to_rate(bits);
         let mut state = CShake::new(b"KMAC", custom_string, bits);
         state.update(left_encode(rate).value());
         state.update(left_encode(key.len() * 8).value());

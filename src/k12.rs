@@ -2,10 +2,9 @@
 //!
 //! [`here`]: https://eprint.iacr.org/2016/770.pdf
 
-use crate::{Buffer, EncodedLen, Hasher, KeccakFamily, Permutation};
+use crate::{bits_to_rate, Buffer, EncodedLen, Hasher, KeccakFamily, Permutation};
 
 const ROUNDS: usize = 12;
-const K12_RATE: usize = 200 - 128 / 4;
 
 const RC: [u64; ROUNDS] = [
     0x000000008000808b,
@@ -63,9 +62,10 @@ impl<T> KangarooTwelve<T> {
     ///
     /// [`KangarooTwelve`]: struct.KangarooTwelve.html
     pub fn new(custom_string: T) -> Self {
+        let rate = bits_to_rate(128);
         KangarooTwelve {
-            state: KeccakFamily::new(K12_RATE, 0),
-            current_chunk: KeccakFamily::new(K12_RATE, 0x0b),
+            state: KeccakFamily::new(rate, 0),
+            current_chunk: KeccakFamily::new(rate, 0x0b),
             custom_string: Some(custom_string),
             written: 0,
             chunks: 0,
@@ -92,8 +92,8 @@ impl<T: AsRef<[u8]> + Clone> Hasher for KangarooTwelve<T> {
         while to_absorb.len() > 0 {
             if self.written == Self::MAX_CHUNK_SIZE {
                 let mut chunk_hash = [0u8; 32];
-                let current_chunk =
-                    core::mem::replace(&mut self.current_chunk, KeccakFamily::new(K12_RATE, 0x0b));
+                let current_chunk = self.current_chunk.clone();
+                self.current_chunk.reset();
                 current_chunk.finalize(&mut chunk_hash);
                 self.state.update(&chunk_hash);
                 self.written = 0;

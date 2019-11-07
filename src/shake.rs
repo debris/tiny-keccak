@@ -1,4 +1,4 @@
-use crate::{Hasher, KeccakFamily, Standard};
+use crate::{bits_to_rate, Hasher, KeccakFamily, Standard};
 
 const SHAKE_DELIM: u8 = 0x1f;
 
@@ -27,7 +27,7 @@ impl Shake {
 
     fn new(bits: usize) -> Shake {
         Shake {
-            state: KeccakFamily::new(200 - bits / 4, SHAKE_DELIM),
+            state: KeccakFamily::new(bits_to_rate(bits), SHAKE_DELIM),
         }
     }
 }

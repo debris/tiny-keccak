@@ -2,7 +2,7 @@
 //!
 //! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 
-use crate::{left_encode, Hasher, KeccakFamily, Standard};
+use crate::{bits_to_rate, left_encode, Hasher, KeccakFamily, Standard};
 
 const CSHAKE_DELIM: u8 = 0x04;
 
@@ -30,7 +30,7 @@ impl CShake {
     }
 
     pub(crate) fn new(name: &[u8], custom_string: &[u8], bits: usize) -> CShake {
-        let rate = 200 - bits / 4;
+        let rate = bits_to_rate(bits);
         let mut state = KeccakFamily::new(rate, CSHAKE_DELIM);
         state.update(left_encode(rate).value());
         state.update(left_encode(name.len() * 8).value());
