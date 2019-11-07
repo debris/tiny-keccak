@@ -57,3 +57,7 @@ required-features = ["keccak"]
 [[bench]]
 name = "kangaroo"
 required-features = ["k12"]
+
+[[example]]
+name = "sha3"
+required-features = ["sha3"]
