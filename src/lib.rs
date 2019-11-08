@@ -407,6 +407,7 @@ impl<P: Permutation> KeccakState<P> {
 struct KeccakXof<P> {
     state: KeccakState<P>,
     offset: usize,
+    xof_started: bool,
 }
 
 impl<P> Clone for KeccakXof<P> {
@@ -414,6 +415,7 @@ impl<P> Clone for KeccakXof<P> {
         KeccakXof {
             state: self.state.clone(),
             offset: self.offset,
+            xof_started: false,
         }
     }
 }
@@ -423,10 +425,16 @@ impl<P: Permutation> KeccakXof<P> {
         KeccakXof {
             state: KeccakState::new(rate, delim),
             offset: 0,
+            xof_started: false,
         }
     }
 
     fn squeeze(&mut self, output: &mut [u8]) {
+        if !self.xof_started {
+            self.xof_started = true;
+            self.state.pad();
+            self.state.keccak();
+        }
         // second foldp
         let mut op = 0;
         let mut l = output.len();

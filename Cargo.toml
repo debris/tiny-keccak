@@ -40,7 +40,7 @@ tuple_hash = ["cshake"]
 
 [[test]]
 name = "keccak"
-required-features = ["fips202"]
+required-features = ["keccak"]
 
 [[test]]
 name = "sp800"
@@ -49,6 +49,18 @@ required-features = ["sp800"]
 [[test]]
 name = "kangaroo"
 required-features = ["k12"]
+
+[[test]]
+name = "sha3"
+required-features = ["sha3"]
+
+[[test]]
+name = "shake"
+required-features = ["shake"]
+
+[[kmac]]
+name = "kmac"
+required-features = ["kmac"]
 
 [[bench]]
 name = "keccak"
