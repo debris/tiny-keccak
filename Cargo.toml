@@ -43,8 +43,12 @@ name = "keccak"
 required-features = ["keccak"]
 
 [[test]]
-name = "sp800"
-required-features = ["sp800"]
+name = "cshake"
+required-features = ["cshake"]
+
+[[test]]
+name = "tuple_hash"
+required-features = ["tuple_hash"]
 
 [[test]]
 name = "kangaroo"
