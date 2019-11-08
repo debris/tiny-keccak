@@ -58,7 +58,7 @@ required-features = ["sha3"]
 name = "shake"
 required-features = ["shake"]
 
-[[kmac]]
+[[test]]
 name = "kmac"
 required-features = ["kmac"]
 

@@ -2,18 +2,16 @@ use tiny_keccak::{Hasher, Sha3};
 
 fn main() {
     let mut sha3 = Sha3::v256();
-    let mut res: [u8; 32] = [0; 32];
+    let mut output = [0; 32];
+    let expected = b"\
+        \x64\x4b\xcc\x7e\x56\x43\x73\x04\x09\x99\xaa\xc8\x9e\x76\x22\xf3\
+        \xca\x71\xfb\xa1\xd9\x72\xfd\x94\xa3\x1c\x3b\xfb\xf2\x4e\x39\x38\
+    ";
 
     sha3.update(b"hello");
     sha3.update(b" ");
     sha3.update(b"world");
-    sha3.finalize(&mut res);
+    sha3.finalize(&mut output);
 
-    let expected = &[
-        0x64, 0x4b, 0xcc, 0x7e, 0x56, 0x43, 0x73, 0x04, 0x09, 0x99, 0xaa, 0xc8, 0x9e, 0x76, 0x22,
-        0xf3, 0xca, 0x71, 0xfb, 0xa1, 0xd9, 0x72, 0xfd, 0x94, 0xa3, 0x1c, 0x3b, 0xfb, 0xf2, 0x4e,
-        0x39, 0x38,
-    ];
-
-    assert_eq!(expected, &res);
+    assert_eq!(expected, &output);
 }
