@@ -1,24 +1,37 @@
-//! An implementation of sha3, shake, keccak and KangarooTwelve functions.
+//! Keccak derived functions specified in [`FIPS-202`] and [`SP800-185`]
 //!
-//! ## Usage
+//! # Example
 //!
-//! Add this to your `Cargo.toml`:
-//!
-//! ```toml
-//! [dependencies]
-//! tiny-keccak = "1.5"
+//! ```
+//! # use tiny_keccak::Hasher;
+//! #
+//! # fn foo<H: Hasher>(mut hasher: H) {
+//! let input_a = b"hello world";
+//! let input_b = b"!";
+//! let mut output = [0u8; 32];
+//! hasher.update(input_a);
+//! hasher.update(input_b);
+//! hasher.finalize(&mut output);
+//! # }
 //! ```
 //!
-//! ## Features
-//! - keccak (enabled by default)
-//! - k12 (**not** enabled by default, implements KangarooTwelve)
+//! # Credits
 //!
-//! Inspired by implementations:
-//! - [keccak-tiny](https://github.com/coruus/keccak-tiny)
-//! - [GoKangarooTwelve](https://github.com/mimoo/GoKangarooTwelve)
+//! `tiny-keccak` was heavily inspsired by the following libraries:
 //!
-//! License: CC0, attribution kindly requested. Blame taken too,
+//! - [`keccak-tiny`]
+//! - [`GoKangarooTwelve`]
+//! - [`quininer/sp800-185`]
+//!
+//! License: [`CC0`], attribution kindly requested. Blame taken too,
 //! but not liability.
+//!
+//! [`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
+//! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+//! [`keccak-tiny`]: https://github.com/coruus/keccak-tiny
+//! [`GoKangarooTwelve`]: https://github.com/mimoo/GoKangarooTwelve
+//! [`quininer/sp800-185`]: https://github.com/quininer/sp800-185
+//! [`CC0`]: https://github.com/debris/tiny-keccak/blob/master/LICENSE
 
 #![no_std]
 
@@ -33,8 +46,8 @@ const PI: [usize; 24] = [
 const WORDS: usize = 25;
 
 macro_rules! keccak_function {
-    ($name: ident, $rounds: expr, $rc: expr) => {
-
+    ($doc: expr, $name: ident, $rounds: expr, $rc: expr) => {
+        #[doc = $doc]
         #[allow(unused_assignments)]
         #[allow(non_upper_case_globals)]
         pub fn $name(a: &mut [u64; $crate::WORDS]) {
@@ -104,19 +117,133 @@ macro_rules! keccak_function {
 }
 
 #[cfg(feature = "k12")]
-mod kangaroo;
+mod keccakp;
+
+#[cfg(feature = "k12")]
+pub use keccakp::keccakp;
+
+#[cfg(any(
+    feature = "keccak",
+    feature = "shake",
+    feature = "sha3",
+    feature = "cshake",
+    feature = "kmac",
+    feature = "tuple_hash"
+))]
+mod keccakf;
+
+#[cfg(any(
+    feature = "keccak",
+    feature = "shake",
+    feature = "sha3",
+    feature = "cshake",
+    feature = "kmac",
+    feature = "tuple_hash"
+))]
+pub use keccakf::keccakf;
+
+#[cfg(feature = "k12")]
+mod k12;
+
+#[cfg(feature = "k12")]
+pub use k12::KangarooTwelve;
 
 #[cfg(feature = "keccak")]
 mod keccak;
 
-#[cfg(feature = "k12")]
-pub use kangaroo::{k12, KangarooTwelve, keccakf as keccakf12};
-
 #[cfg(feature = "keccak")]
-pub use keccak::*;
+pub use keccak::Keccak;
 
-trait Permutation {
-    fn execute(a: &mut Buffer);
+#[cfg(feature = "shake")]
+mod shake;
+
+#[cfg(feature = "shake")]
+pub use shake::Shake;
+
+#[cfg(feature = "sha3")]
+mod sha3;
+
+#[cfg(feature = "sha3")]
+pub use sha3::Sha3;
+
+#[cfg(feature = "cshake")]
+mod cshake;
+
+#[cfg(feature = "cshake")]
+pub use cshake::CShake;
+
+#[cfg(feature = "kmac")]
+mod kmac;
+
+#[cfg(feature = "kmac")]
+pub use kmac::Kmac;
+
+#[cfg(feature = "tuple_hash")]
+mod tuple_hash;
+
+#[cfg(feature = "tuple_hash")]
+pub use tuple_hash::TupleHash;
+
+/// A trait for hashing an arbitrary stream of bytes.
+///
+/// # Example
+///
+/// ```
+/// # use tiny_keccak::Hasher;
+/// #
+/// # fn foo<H: Hasher>(mut hasher: H) {
+/// let input_a = b"hello world";
+/// let input_b = b"!";
+/// let mut output = [0u8; 32];
+/// hasher.update(input_a);
+/// hasher.update(input_b);
+/// hasher.finalize(&mut output);
+/// # }
+/// ```
+pub trait Hasher: Clone {
+    /// Absorb additional input. Can be called multiple times.
+    fn update(&mut self, input: &[u8]);
+
+    /// Pad and squeeze the state to the output.
+    fn finalize(self, output: &mut [u8]);
+}
+
+/// A function on bit strings in which the output can be extended to any
+/// function (`XOF`) desired length.
+pub trait Xof {
+    fn squeeze(&mut self, output: &mut [u8]);
+}
+
+struct EncodedLen {
+    offset: usize,
+    buffer: [u8; 9],
+}
+
+impl EncodedLen {
+    fn value(&self) -> &[u8] {
+        &self.buffer[self.offset..]
+    }
+}
+
+fn left_encode(len: usize) -> EncodedLen {
+    let mut buffer = [0u8; 9];
+    buffer[1..].copy_from_slice(&(len as u64).to_be_bytes());
+    let offset = buffer.iter().position(|i| *i != 0).unwrap_or(8);
+    buffer[offset - 1] = 9 - offset as u8;
+
+    EncodedLen {
+        offset: offset - 1,
+        buffer,
+    }
+}
+
+fn right_encode(len: usize) -> EncodedLen {
+    let mut buffer = [0u8; 9];
+    buffer[..8].copy_from_slice(&(len as u64).to_be_bytes());
+    let offset = buffer.iter().position(|i| *i != 0).unwrap_or(7);
+    buffer[8] = 8 - offset as u8;
+
+    EncodedLen { offset, buffer }
 }
 
 #[derive(Default, Clone)]
@@ -177,7 +304,11 @@ impl Buffer {
     }
 }
 
-struct KeccakFamily<P> {
+trait Permutation {
+    fn execute(a: &mut Buffer);
+}
+
+struct KeccakState<P> {
     buffer: Buffer,
     offset: usize,
     rate: usize,
@@ -185,9 +316,9 @@ struct KeccakFamily<P> {
     permutation: core::marker::PhantomData<P>,
 }
 
-impl <P> Clone for KeccakFamily<P> {
+impl<P> Clone for KeccakState<P> {
     fn clone(&self) -> Self {
-        KeccakFamily {
+        KeccakState {
             buffer: self.buffer.clone(),
             offset: self.offset,
             rate: self.rate,
@@ -197,10 +328,10 @@ impl <P> Clone for KeccakFamily<P> {
     }
 }
 
-impl <P: Permutation> KeccakFamily<P> {
+impl<P: Permutation> KeccakState<P> {
     fn new(rate: usize, delim: u8) -> Self {
         assert!(rate != 0, "rate cannot be equal 0");
-        KeccakFamily {
+        KeccakState {
             buffer: Buffer::default(),
             offset: 0,
             rate,
@@ -209,7 +340,7 @@ impl <P: Permutation> KeccakFamily<P> {
         }
     }
 
-    fn keccakf(&mut self) {
+    fn keccak(&mut self) {
         P::execute(&mut self.buffer);
     }
 
@@ -221,7 +352,7 @@ impl <P: Permutation> KeccakFamily<P> {
         let mut offset = self.offset;
         while l >= rate {
             self.buffer.xorin(&input[ip..], offset, rate);
-            self.keccakf();
+            self.keccak();
             ip += rate;
             l -= rate;
             rate = self.rate;
@@ -243,7 +374,7 @@ impl <P: Permutation> KeccakFamily<P> {
         let mut l = output.len();
         while l >= self.rate {
             self.buffer.setout(&mut output[op..], 0, self.rate);
-            self.keccakf();
+            self.keccak();
             op += self.rate;
             l -= self.rate;
         }
@@ -254,10 +385,110 @@ impl <P: Permutation> KeccakFamily<P> {
     fn finalize(mut self, output: &mut [u8]) {
         self.pad();
 
-        // apply keccakf
-        self.keccakf();
+        // apply keccak
+        self.keccak();
 
         // squeeze output
         self.squeeze(output);
+    }
+
+    fn fill_block(&mut self) {
+        self.keccak();
+        self.offset = 0;
+    }
+
+    fn reset(&mut self) {
+        self.buffer = Buffer::default();
+        self.offset = 0;
+    }
+}
+
+/// eXtendable Output Function (XOF).
+struct KeccakXof<P> {
+    state: KeccakState<P>,
+    offset: usize,
+    xof_started: bool,
+}
+
+impl<P> Clone for KeccakXof<P> {
+    fn clone(&self) -> Self {
+        KeccakXof {
+            state: self.state.clone(),
+            offset: self.offset,
+            xof_started: false,
+        }
+    }
+}
+
+impl<P: Permutation> KeccakXof<P> {
+    fn new(rate: usize, delim: u8) -> Self {
+        KeccakXof {
+            state: KeccakState::new(rate, delim),
+            offset: 0,
+            xof_started: false,
+        }
+    }
+
+    fn squeeze(&mut self, output: &mut [u8]) {
+        if !self.xof_started {
+            self.xof_started = true;
+            self.state.pad();
+            self.state.keccak();
+        }
+        // second foldp
+        let mut op = 0;
+        let mut l = output.len();
+        let mut rate = self.state.rate - self.offset;
+        let mut offset = self.offset;
+        while l >= rate {
+            self.state.buffer.setout(&mut output[op..], offset, rate);
+            self.state.keccak();
+            op += rate;
+            l -= rate;
+            rate = self.state.rate;
+            offset = 0;
+        }
+
+        self.state.buffer.setout(&mut output[op..], offset, l);
+        self.offset = offset + l;
+    }
+
+    fn update(&mut self, input: &[u8]) {
+        self.state.update(input);
+    }
+
+    fn finalize(self, output: &mut [u8]) {
+        self.state.finalize(output);
+    }
+
+    fn fill_block(&mut self) {
+        self.state.fill_block();
+    }
+}
+
+fn bits_to_rate(bits: usize) -> usize {
+    200 - bits / 4
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{left_encode, right_encode};
+
+    #[test]
+    fn test_left_encode() {
+        assert_eq!(left_encode(0).value(), &[1, 0]);
+        assert_eq!(left_encode(128).value(), &[1, 128]);
+        assert_eq!(left_encode(65536).value(), &[3, 1, 0, 0]);
+        assert_eq!(left_encode(4096).value(), &[2, 16, 0]);
+        assert_eq!(left_encode(54321).value(), &[2, 212, 49]);
+    }
+
+    #[test]
+    fn test_right_encode() {
+        assert_eq!(right_encode(0).value(), &[0, 1]);
+        assert_eq!(right_encode(128).value(), &[128, 1]);
+        assert_eq!(right_encode(65536).value(), &[1, 0, 0, 3]);
+        assert_eq!(right_encode(4096).value(), &[16, 0, 2]);
+        assert_eq!(right_encode(54321).value(), &[212, 49, 2]);
     }
 }
