@@ -2,6 +2,12 @@ use crate::{left_encode, right_encode, CShake, Hasher, Xof};
 
 /// The `TupleHash` extendable-output and hash functions defined in [`SP800-185`].
 ///
+/// `TupleHash` is designed to provide a generic, misuse-resistant way to combine a sequence of
+/// strings for hashing such that, for example, a `TupleHash` computed on the tuple (`"abc"` ,`"d"`) will
+/// produce a different hash value than a `TupleHash` computed on the tuple (`"ab"`,`"cd"`), even though
+/// all the remaining input parameters are kept the same, and the two resulting concatenated
+/// strings, without string encoding, are identical.
+///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 #[derive(Clone)]
 pub struct TupleHash {

@@ -184,6 +184,12 @@ mod tuple_hash;
 #[cfg(feature = "tuple_hash")]
 pub use tuple_hash::TupleHash;
 
+#[cfg(feature = "parallel_hash")]
+mod parallel_hash;
+
+#[cfg(feature = "parallel_hash")]
+pub use parallel_hash::ParallelHash;
+
 /// A trait for hashing an arbitrary stream of bytes.
 ///
 /// # Example

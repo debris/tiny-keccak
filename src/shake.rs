@@ -1,7 +1,5 @@
 use crate::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakXof, Xof};
 
-const SHAKE_DELIM: u8 = 0x1f;
-
 /// The `SHAKE` extendable-output functions defined in [`FIPS-202`].
 ///
 /// [`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
@@ -11,6 +9,8 @@ pub struct Shake {
 }
 
 impl Shake {
+    const DELIM: u8 = 0x1f;
+
     /// Creates  new [`Shake`] hasher with a security level of 128 bits.
     ///
     /// [`Shake`]: struct.Shake.html
@@ -25,9 +25,9 @@ impl Shake {
         Shake::new(256)
     }
 
-    fn new(bits: usize) -> Shake {
+    pub(crate) fn new(bits: usize) -> Shake {
         Shake {
-            state: KeccakXof::new(bits_to_rate(bits), SHAKE_DELIM),
+            state: KeccakXof::new(bits_to_rate(bits), Self::DELIM),
         }
     }
 }
