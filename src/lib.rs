@@ -1,4 +1,4 @@
-//! Keccak derived functions specified in [`FIPS-202`] and [`SP800-185`]
+//! Keccak derived functions specified in [`FIPS-202`], [`SP800-185`] and [`KangarooTwelve`].
 //!
 //! # Example
 //!
@@ -23,11 +23,14 @@
 //! - [`@Vurich`] for optimizations
 //! - [`@oleganza`] for adding support for half-duplex use
 //!
-//! License: [`CC0`], attribution kindly requested. Blame taken too,
+//! # License
+//!
+//! [`CC0`]. Attribution kindly requested. Blame taken too,
 //! but not liability.
 //!
 //! [`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
 //! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+//! [`KangarooTwelve`]: https://eprint.iacr.org/2016/770.pdf
 //! [`coruus/keccak-tiny`]: https://github.com/coruus/keccak-tiny
 //! [`mimoo/GoKangarooTwelve`]: https://github.com/mimoo/GoKangarooTwelve
 //! [`@quininer`]: https://github.com/quininer
