@@ -1,12 +1,23 @@
-use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher, Xof};
+use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher, IntoXof, Xof};
 
 /// The `KMAC` pseudo-random functions defined in [`SP800-185`].
 ///
+/// The KECCAK Message Authentication Code (`KMAC`) algorithm is a `PRF` and keyed hash function based
+/// on KECCAK. It provides variable-length output, and unlike [`SHAKE`] and [`cSHAKE`], altering the
+/// requested output length generates a new, unrelated output. KMAC has two variants, [`KMAC128`] and
+/// [`KMAC256`], built from [`cSHAKE128`] and [`cSHAKE256`], respectively. The two variants differ somewhat in
+/// their technical security properties.
+///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+/// [`KMAC128`]: struct.Kmac.html#method.v128
+/// [`KMAC256`]: struct.Kmac.html#method.v256
+/// [`SHAKE`]: struct.Shake.html
+/// [`cSHAKE`]: struct.CShake.html
+/// [`cSHAKE128`]: struct.CShake.html#method.v128
+/// [`cSHAKE256`]: struct.CShake.html#method.v256
 #[derive(Clone)]
 pub struct Kmac {
     state: CShake,
-    xof_started: bool,
 }
 
 impl Kmac {
@@ -31,10 +42,7 @@ impl Kmac {
         state.update(left_encode(key.len() * 8).value());
         state.update(key);
         state.fill_block();
-        Kmac {
-            state,
-            xof_started: false,
-        }
+        Kmac { state }
     }
 }
 
@@ -49,13 +57,28 @@ impl Hasher for Kmac {
     }
 }
 
-impl Xof for Kmac {
-    fn squeeze(&mut self, output: &mut [u8]) {
-        if !self.xof_started {
-            self.xof_started = true;
-            self.state.update(right_encode(0).value());
-        }
+/// The `KMACXOF` extendable-output functions defined in [`SP800-185`].
+///
+/// It can be created only by using [`Kmac::IntoXof`] interface.
+///
+/// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+/// [`Kmac::IntoXof`]: struct.Kmac.html#impl-IntoXof
+#[derive(Clone)]
+pub struct KmacXof {
+    state: CShake,
+}
 
+impl IntoXof for Kmac {
+    type Xof = KmacXof;
+
+    fn into_xof(mut self) -> Self::Xof {
+        self.state.update(right_encode(0).value());
+        KmacXof { state: self.state }
+    }
+}
+
+impl Xof for KmacXof {
+    fn squeeze(&mut self, output: &mut [u8]) {
         self.state.squeeze(output)
     }
 }

@@ -4,7 +4,7 @@ description = "An implementation of the FIPS-202-defined SHA-3 and SHAKE functio
 homepage = "https://github.com/debris/tiny-keccak"
 license = "CC0-1.0"
 name = "tiny-keccak"
-version = "2.0.0-alpha2"
+version = "2.0.0-alpha3"
 authors = ["debris <marek.kotewicz@gmail.com>"]
 keywords = ["sha3", "sha-3", "keccak", "crypto", "kangarootwelve"]
 categories = ["cryptography", "no-std"]
@@ -33,6 +33,7 @@ fips202 = ["keccak", "shake", "sha3"]
 k12 = []
 keccak = []
 kmac = ["cshake"]
+parallel_hash = ["cshake"]
 sha3 = []
 shake = []
 sp800 = ["cshake", "kmac", "tuple_hash"]
@@ -65,6 +66,10 @@ required-features = ["shake"]
 [[test]]
 name = "kmac"
 required-features = ["kmac"]
+
+[[test]]
+name = "parallel_hash"
+required-features = ["parallel_hash"]
 
 [[bench]]
 name = "keccak"
