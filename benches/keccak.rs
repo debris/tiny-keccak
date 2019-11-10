@@ -3,16 +3,16 @@
 extern crate test;
 
 use test::Bencher;
-use tiny_keccak::*;
+use tiny_keccak::{keccakf, Keccak, Hasher};
 
 #[bench]
-fn bench_sha3_256_input_4096_bytes(b: &mut Bencher) {
-    let data = vec![254u8; 4096];
+fn bench_keccak_256_input_4096_bytes(b: &mut Bencher) {
+    let data = [254u8; 4096];
     b.bytes = data.len() as u64;
 
     b.iter(|| {
         let mut res: [u8; 32] = [0; 32];
-        let mut keccak = Keccak::new_sha3_256();
+        let mut keccak = Keccak::v256();
         keccak.update(&data);
         keccak.finalize(&mut res);
     });
@@ -31,12 +31,13 @@ fn keccakf_u64(b: &mut Bencher) {
 
 #[bench]
 fn bench_keccak256(b: &mut Bencher) {
-    const BYTES: usize = 32;
-    b.bytes = BYTES as u64;
+    let data = [0u8; 32];
+    b.bytes = data.len() as u64;
 
     b.iter(|| {
-        let data = [0u8; BYTES];
-        let mut result = [0u8; BYTES];
-        Keccak::keccak256(&data, &mut result);
+        let mut res: [u8; 32] = [0; 32];
+        let mut keccak = Keccak::v256();
+        keccak.update(&data);
+        keccak.finalize(&mut res);
     });
 }
