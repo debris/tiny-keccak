@@ -32,6 +32,7 @@
 //! [`mimoo/GoKangarooTwelve`]: https://github.com/mimoo/GoKangarooTwelve
 //! [`@quininer`]: https://github.com/quininer
 //! [`@Vurich`]: https://github.com/Vurich
+//! [`@oleganza`]: https://github.com/oleganza
 //! [`CC0`]: https://github.com/debris/tiny-keccak/blob/master/LICENSE
 
 #![no_std]

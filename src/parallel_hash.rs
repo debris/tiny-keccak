@@ -1,8 +1,8 @@
-use crate::{left_encode, right_encode, CShake, Hasher, IntoXof, Shake, Xof};
+use crate::{left_encode, right_encode, CShake, Hasher, IntoXof, Xof};
 
 #[derive(Clone)]
 struct UnfinishedState {
-    state: Shake,
+    state: CShake,
     absorbed: usize,
 }
 
@@ -96,7 +96,7 @@ impl Hasher for ParallelHash {
         let input_blocks = &input[..input_blocks_end];
         let input_end = &input[input_blocks_end..];
         let parts = input_blocks.chunks(self.block_size).map(|chunk| {
-            let mut state = Shake::new(bits);
+            let mut state = CShake::new(b"", b"", bits);
             state.update(chunk);
             let mut suboutput = Suboutout::security(bits);
             state.finalize(suboutput.as_bytes_mut());
@@ -110,7 +110,7 @@ impl Hasher for ParallelHash {
 
         if !input_end.is_empty() {
             assert!(self.unfinished.is_none());
-            let mut state = Shake::new(bits);
+            let mut state = CShake::new(b"", b"", bits);
             state.update(input_end);
             self.unfinished = Some(UnfinishedState {
                 state,
