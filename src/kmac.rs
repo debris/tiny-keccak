@@ -1,4 +1,4 @@
-use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher, Xof};
+use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher, Xof, IntoXof};
 
 /// The `KMAC` pseudo-random functions defined in [`SP800-185`].
 ///
@@ -18,7 +18,6 @@ use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher, Xof};
 #[derive(Clone)]
 pub struct Kmac {
     state: CShake,
-    xof_started: bool,
 }
 
 impl Kmac {
@@ -45,7 +44,6 @@ impl Kmac {
         state.fill_block();
         Kmac {
             state,
-            xof_started: false,
         }
     }
 }
@@ -61,13 +59,30 @@ impl Hasher for Kmac {
     }
 }
 
-impl Xof for Kmac {
-    fn squeeze(&mut self, output: &mut [u8]) {
-        if !self.xof_started {
-            self.xof_started = true;
-            self.state.update(right_encode(0).value());
-        }
+/// The `KMACXOF` extendable-output functions defined in [`SP800-185`].
+///
+/// It can be created only by using [`Kmac::IntoXof`] interface.
+///
+/// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+/// [`Kmac::IntoXof`]: struct.Kmac.html#impl-IntoXof
+#[derive(Clone)]
+pub struct KmacXof {
+    state: CShake,
+}
 
+impl IntoXof for Kmac {
+    type Xof = KmacXof;
+
+    fn into_xof(mut self) -> Self::Xof {
+        self.state.update(right_encode(0).value());
+        KmacXof {
+            state: self.state,
+        }
+    }
+}
+
+impl Xof for KmacXof {
+    fn squeeze(&mut self, output: &mut [u8]) {
         self.state.squeeze(output)
     }
 }

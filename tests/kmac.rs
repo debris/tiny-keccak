@@ -1,4 +1,4 @@
-use tiny_keccak::{Hasher, Kmac, Xof};
+use tiny_keccak::{Hasher, Kmac, Xof, IntoXof};
 
 #[test]
 fn test_kmac128_one() {
@@ -179,7 +179,8 @@ fn test_kmac128_xof_one() {
     let mut output = [0u8; 32];
     let mut kmac = Kmac::v128(key, custom);
     kmac.update(data);
-    kmac.squeeze(&mut output);
+    let mut xof = kmac.into_xof();
+    xof.squeeze(&mut output);
     assert_eq!(expected, &output);
 }
 
@@ -198,7 +199,8 @@ fn test_kmac128_xof_two() {
     let mut output = [0u8; 32];
     let mut kmac = Kmac::v128(key, custom);
     kmac.update(data);
-    kmac.squeeze(&mut output);
+    let mut xof = kmac.into_xof();
+    xof.squeeze(&mut output);
     assert_eq!(expected, &output);
 }
 
@@ -231,7 +233,8 @@ fn test_kmac128_xof_three() {
     let mut output = [0u8; 32];
     let mut kmac = Kmac::v128(key, custom);
     kmac.update(data);
-    kmac.squeeze(&mut output);
+    let mut xof = kmac.into_xof();
+    xof.squeeze(&mut output);
     assert_eq!(expected, &output);
 }
 
@@ -252,7 +255,8 @@ fn test_kmac256_xof_one() {
     let mut output = [0u8; 64];
     let mut kmac = Kmac::v256(key, custom);
     kmac.update(data);
-    kmac.squeeze(&mut output);
+    let mut xof = kmac.into_xof();
+    xof.squeeze(&mut output);
     assert_eq!(expected as &[u8], &output as &[u8]);
 }
 
@@ -287,7 +291,8 @@ fn test_kmac256_xof_two() {
     let mut output = [0u8; 64];
     let mut kmac = Kmac::v256(key, custom);
     kmac.update(data);
-    kmac.squeeze(&mut output);
+    let mut xof = kmac.into_xof();
+    xof.squeeze(&mut output);
     assert_eq!(expected as &[u8], &output as &[u8]);
 }
 
@@ -322,6 +327,7 @@ fn test_kmac256_xof_three() {
     let mut output = [0u8; 64];
     let mut kmac = Kmac::v256(key, custom);
     kmac.update(data);
-    kmac.squeeze(&mut output);
+    let mut xof = kmac.into_xof();
+    xof.squeeze(&mut output);
     assert_eq!(expected as &[u8], &output as &[u8]);
 }

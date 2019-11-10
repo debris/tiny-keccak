@@ -1,4 +1,4 @@
-use tiny_keccak::{CShake, Hasher};
+use tiny_keccak::{CShake, Hasher, Xof};
 
 #[test]
 fn test_cshake128_one() {
@@ -97,4 +97,20 @@ fn test_cshake256_two() {
     cshake.update(input);
     cshake.finalize(&mut output);
     assert_eq!(expected as &[u8], &output as &[u8]);
+}
+
+#[test]
+fn test_cshake_as_shake() {
+    let mut shake = CShake::v128(&[], &[]);
+    let mut output = [0; 32];
+    let expected = b"\
+        \x43\xE4\x1B\x45\xA6\x53\xF2\xA5\xC4\x49\x2C\x1A\xDD\x54\x45\x12\
+        \xDD\xA2\x52\x98\x33\x46\x2B\x71\xA4\x1A\x45\xBE\x97\x29\x0B\x6F\
+    ";
+
+    for _ in 0..16 {
+        shake.squeeze(&mut output);
+    }
+
+    assert_eq!(expected, &output);
 }

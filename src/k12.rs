@@ -44,7 +44,7 @@ impl<T> KangarooTwelve<T> {
     }
 }
 
-impl<T: AsRef<[u8]> + Clone> Hasher for KangarooTwelve<T> {
+impl<T: AsRef<[u8]>> Hasher for KangarooTwelve<T> {
     fn update(&mut self, input: &[u8]) {
         let mut to_absorb = input;
         if self.chunks == 0 {

@@ -1,4 +1,4 @@
-use crate::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakXof, Xof};
+use crate::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakXof, Xof, IntoXof};
 
 /// The `SHAKE` extendable-output functions defined in [`FIPS-202`].
 ///
@@ -39,6 +39,14 @@ impl Hasher for Shake {
 
     fn finalize(self, output: &mut [u8]) {
         self.state.finalize(output);
+    }
+}
+
+impl IntoXof for Shake {
+    type Xof = Shake;
+
+    fn into_xof(self) -> Shake {
+        self
     }
 }
 

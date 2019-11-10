@@ -2,7 +2,7 @@
 //!
 //! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 
-use crate::{bits_to_rate, keccakf::KeccakF, left_encode, Hasher, KeccakXof, Xof};
+use crate::{bits_to_rate, keccakf::KeccakF, left_encode, Hasher, KeccakXof, Xof, IntoXof};
 
 /// The `cSHAKE` extendable-output functions defined in [`SP800-185`].
 ///
@@ -31,6 +31,13 @@ impl CShake {
 
     pub(crate) fn new(name: &[u8], custom_string: &[u8], bits: usize) -> CShake {
         let rate = bits_to_rate(bits);
+        // if there is no name and no customization string
+        // cSHAKE is SHAKE
+        if name.is_empty() && custom_string.is_empty() {
+            let state = KeccakXof::new(rate, 0x1f);
+            return CShake { state }
+        }
+
         let mut state = KeccakXof::new(rate, Self::DELIM);
         state.update(left_encode(rate).value());
         state.update(left_encode(name.len() * 8).value());
@@ -53,6 +60,14 @@ impl Hasher for CShake {
 
     fn finalize(self, output: &mut [u8]) {
         self.state.finalize(output);
+    }
+}
+
+impl IntoXof for CShake {
+    type Xof = CShake;
+
+    fn into_xof(self) -> CShake {
+        self
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{left_encode, right_encode, CShake, Hasher, Shake, Xof};
+use crate::{left_encode, right_encode, CShake, Hasher, Shake, Xof, IntoXof};
 
 #[derive(Clone)]
 struct UnfinishedState {
@@ -31,7 +31,7 @@ impl Suboutout {
     }
 }
 
-/// The `ParallelHash` extendable-output and hash functions defined in [`SP800-185`].
+/// The `ParallelHash` hash functions defined in [`SP800-185`].
 ///
 /// The purpose of `ParallelHash` is to support the efficient hashing of very long strings, by
 /// taking advantage of the parallelism available in modern processors. `ParallelHash` supports the
@@ -47,7 +47,6 @@ pub struct ParallelHash {
     bits: usize,
     blocks: usize,
     unfinished: Option<UnfinishedState>,
-    xof_started: bool,
 }
 
 impl ParallelHash {
@@ -68,7 +67,6 @@ impl ParallelHash {
             bits,
             blocks: 0,
             unfinished: None,
-            xof_started: false,
         }
     }
 }
@@ -135,20 +133,39 @@ impl Hasher for ParallelHash {
     }
 }
 
-impl Xof for ParallelHash {
-    fn squeeze(&mut self, output: &mut [u8]) {
-        if !self.xof_started {
-            self.xof_started = true;
-            if let Some(unfinished) = self.unfinished.take() {
-                let mut suboutput = Suboutout::security(self.bits);
-                unfinished.state.finalize(suboutput.as_bytes_mut());
-                self.state.update(suboutput.as_bytes());
-                self.blocks += 1;
-            }
+/// The `ParallelHashXOF` extendable-output functions defined in [`SP800-185`].
+///
+/// It can be created only by using [`ParallelHash::IntoXof`] interface.
+///
+/// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+/// [`ParallelHash::IntoXof`]: struct.ParallelHash.html#impl-IntoXof
+#[derive(Clone)]
+pub struct ParallelHashXof {
+    state: CShake,
+}
 
-            self.state.update(right_encode(self.blocks).value());
-            self.state.update(right_encode(0).value());
+impl IntoXof for ParallelHash {
+    type Xof = ParallelHashXof;
+
+    fn into_xof(mut self) -> Self::Xof {
+        if let Some(unfinished) = self.unfinished.take() {
+            let mut suboutput = Suboutout::security(self.bits);
+            unfinished.state.finalize(suboutput.as_bytes_mut());
+            self.state.update(suboutput.as_bytes());
+            self.blocks += 1;
         }
+
+        self.state.update(right_encode(self.blocks).value());
+        self.state.update(right_encode(0).value());
+
+        ParallelHashXof {
+            state: self.state
+        }
+    }
+}
+
+impl Xof for ParallelHashXof {
+    fn squeeze(&mut self, output: &mut [u8]) {
         self.state.squeeze(output);
     }
 }

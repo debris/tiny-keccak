@@ -17,20 +17,20 @@
 //!
 //! # Credits
 //!
-//! `tiny-keccak` was heavily inspsired by the following libraries:
-//!
-//! - [`keccak-tiny`]
-//! - [`GoKangarooTwelve`]
-//! - [`quininer/sp800-185`]
+//! - [`coruus/keccak-tiny`] for C implementation of keccak function
+//! - [`@quininer`] for `no-std` support and rust implementation [`SP800-185`]
+//! - [`mimoo/GoKangarooTwelve`] for GO implementation of `KangarooTwelve`
+//! - [`@Vurich`] for optimizations
 //!
 //! License: [`CC0`], attribution kindly requested. Blame taken too,
 //! but not liability.
 //!
 //! [`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
 //! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
-//! [`keccak-tiny`]: https://github.com/coruus/keccak-tiny
-//! [`GoKangarooTwelve`]: https://github.com/mimoo/GoKangarooTwelve
-//! [`quininer/sp800-185`]: https://github.com/quininer/sp800-185
+//! [`coruus/keccak-tiny`]: https://github.com/coruus/keccak-tiny
+//! [`mimoo/GoKangarooTwelve`]: https://github.com/mimoo/GoKangarooTwelve
+//! [`@quininer`]: https://github.com/quininer
+//! [`@Vurich`]: https://github.com/Vurich
 //! [`CC0`]: https://github.com/debris/tiny-keccak/blob/master/LICENSE
 
 #![no_std]
@@ -176,19 +176,19 @@ pub use cshake::CShake;
 mod kmac;
 
 #[cfg(feature = "kmac")]
-pub use kmac::Kmac;
+pub use kmac::{Kmac, KmacXof};
 
 #[cfg(feature = "tuple_hash")]
 mod tuple_hash;
 
 #[cfg(feature = "tuple_hash")]
-pub use tuple_hash::TupleHash;
+pub use tuple_hash::{TupleHash, TupleHashXof};
 
 #[cfg(feature = "parallel_hash")]
 mod parallel_hash;
 
 #[cfg(feature = "parallel_hash")]
-pub use parallel_hash::ParallelHash;
+pub use parallel_hash::{ParallelHash, ParallelHashXof};
 
 /// A trait for hashing an arbitrary stream of bytes.
 ///
@@ -206,7 +206,7 @@ pub use parallel_hash::ParallelHash;
 /// hasher.finalize(&mut output);
 /// # }
 /// ```
-pub trait Hasher: Clone {
+pub trait Hasher {
     /// Absorb additional input. Can be called multiple times.
     fn update(&mut self, input: &[u8]);
 
@@ -214,8 +214,40 @@ pub trait Hasher: Clone {
     fn finalize(self, output: &mut [u8]);
 }
 
+/// Converts [`Hasher`] into it's [`Xof`] counterpart.
+///
+/// # Example
+///
+/// ```
+/// # use tiny_keccak::IntoXof;
+/// #
+/// # fn foo<H: IntoXof>(hasher: H) {
+/// let xof = hasher.into_xof();
+/// # }
+/// ```
+///
+/// [`Hasher`]: trait.Hasher.html
+/// [`Xof`]: trait.Xof.html
+pub trait IntoXof {
+    type Xof: Xof;
+
+    fn into_xof(self) -> Self::Xof;
+}
+
 /// A function on bit strings in which the output can be extended to any
 /// function (`XOF`) desired length.
+///
+/// # Example
+///
+/// ```
+/// # use tiny_keccak::Xof;
+/// #
+/// # fn foo<X: Xof>(mut xof: X) {
+/// let mut output = [0u8; 64];
+/// xof.squeeze(&mut output[0..32]);
+/// xof.squeeze(&mut output[32..]);
+/// # }
+/// ```
 pub trait Xof {
     fn squeeze(&mut self, output: &mut [u8]);
 }
@@ -248,7 +280,6 @@ fn right_encode(len: usize) -> EncodedLen {
     buffer[..8].copy_from_slice(&(len as u64).to_be_bytes());
     let offset = buffer.iter().position(|i| *i != 0).unwrap_or(7);
     buffer[8] = 8 - offset as u8;
-
     EncodedLen { offset, buffer }
 }
 
