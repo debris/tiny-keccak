@@ -62,10 +62,9 @@ pub struct TupleHashXof {
 impl IntoXof for TupleHash {
     type Xof = TupleHashXof;
 
-    fn into_xof(self) -> TupleHashXof {
-        let mut state = self.state;
-        state.update(right_encode(0).value());
-        TupleHashXof { state }
+    fn into_xof(mut self) -> TupleHashXof {
+        self.state.update(right_encode(0).value());
+        TupleHashXof { state: self.state }
     }
 }
 

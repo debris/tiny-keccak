@@ -39,6 +39,7 @@
 //! [`CC0`]: https://github.com/debris/tiny-keccak/blob/master/LICENSE
 
 #![no_std]
+#![deny(missing_docs)]
 
 const RHO: [u32; 24] = [
     1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
@@ -218,7 +219,7 @@ pub trait Hasher {
     fn finalize(self, output: &mut [u8]);
 }
 
-/// Converts [`Hasher`] into it's [`Xof`] counterpart.
+/// A trait used to convert [`Hasher`] into it's [`Xof`] counterpart.
 ///
 /// # Example
 ///
@@ -233,13 +234,19 @@ pub trait Hasher {
 /// [`Hasher`]: trait.Hasher.html
 /// [`Xof`]: trait.Xof.html
 pub trait IntoXof {
+    /// A type implementing [`Xof`], eXtendable-output function interface.
+    ///
+    /// [`Xof`]: trait.Xof.html
     type Xof: Xof;
 
+    /// A method used to convert type into [`Xof`].
+    ///
+    /// [`Xof`]: trait.Xof.html
     fn into_xof(self) -> Self::Xof;
 }
 
-/// A function on bit strings in which the output can be extended to any
-/// function (`XOF`) desired length.
+/// Extendable-output function (`XOF`) is a function on bit strings in which the output can be
+/// extended to any desired length.
 ///
 /// # Example
 ///
@@ -253,6 +260,7 @@ pub trait IntoXof {
 /// # }
 /// ```
 pub trait Xof {
+    /// A method used to retrieve another part of hash function output.
     fn squeeze(&mut self, output: &mut [u8]);
 }
 
