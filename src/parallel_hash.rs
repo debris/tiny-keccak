@@ -50,10 +50,16 @@ pub struct ParallelHash {
 }
 
 impl ParallelHash {
+    /// Creates  new [`ParallelHash`] hasher with a security level of 128 bits.
+    ///
+    /// [`ParallelHash`]: struct.ParallelHash.html
     pub fn v128(custom_string: &[u8], block_size: usize) -> ParallelHash {
         ParallelHash::new(custom_string, block_size, 128)
     }
 
+    /// Creates  new [`ParallelHash`] hasher with a security level of 256 bits.
+    ///
+    /// [`ParallelHash`]: struct.ParallelHash.html
     pub fn v256(custom_string: &[u8], block_size: usize) -> ParallelHash {
         ParallelHash::new(custom_string, block_size, 256)
     }

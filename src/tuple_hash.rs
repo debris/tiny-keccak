@@ -1,6 +1,6 @@
 use crate::{left_encode, right_encode, CShake, Hasher, IntoXof, Xof};
 
-/// The `TupleHash` extendable-output and hash functions defined in [`SP800-185`].
+/// The `TupleHash` hash functions defined in [`SP800-185`].
 ///
 /// `TupleHash` is designed to provide a generic, misuse-resistant way to combine a sequence of
 /// strings for hashing such that, for example, a `TupleHash` computed on the tuple (`"abc"` ,`"d"`) will

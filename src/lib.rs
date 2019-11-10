@@ -457,6 +457,7 @@ impl<P: Permutation> KeccakState<P> {
     fn reset(&mut self) {
         self.buffer = Buffer::default();
         self.offset = 0;
+        self.mode = Mode::Absorbing;
     }
 }
 
