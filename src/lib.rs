@@ -114,7 +114,6 @@ macro_rules! keccak_function {
                 a[0] ^= $rc[i];
             }
         }
-
     }
 }
 
@@ -148,7 +147,7 @@ pub use keccakf::keccakf;
 mod k12;
 
 #[cfg(feature = "k12")]
-pub use k12::KangarooTwelve;
+pub use k12::{KangarooTwelve, KangarooTwelveXof};
 
 #[cfg(feature = "keccak")]
 mod keccak;

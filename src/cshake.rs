@@ -2,7 +2,7 @@
 //!
 //! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 
-use crate::{bits_to_rate, keccakf::KeccakF, left_encode, Hasher, IntoXof, KeccakState, Xof};
+use crate::{bits_to_rate, keccakf::KeccakF, left_encode, Hasher, KeccakState, Xof};
 
 /// The `cSHAKE` extendable-output functions defined in [`SP800-185`].
 ///
@@ -60,14 +60,6 @@ impl Hasher for CShake {
 
     fn finalize(self, output: &mut [u8]) {
         self.state.finalize(output);
-    }
-}
-
-impl IntoXof for CShake {
-    type Xof = CShake;
-
-    fn into_xof(self) -> CShake {
-        self
     }
 }
 

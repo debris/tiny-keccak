@@ -1,8 +1,8 @@
-//! The `KangarooTwelve` extendable-output and hash function defined [`here`].
+//! The `KangarooTwelve` hash function defined [`here`].
 //!
 //! [`here`]: https://eprint.iacr.org/2016/770.pdf
 
-use crate::{bits_to_rate, keccakp::KeccakP, EncodedLen, Hasher, KeccakState};
+use crate::{bits_to_rate, keccakp::KeccakP, EncodedLen, Hasher, IntoXof, KeccakState, Xof};
 
 fn encode_len(len: usize) -> EncodedLen {
     let len_view = (len as u64).to_be_bytes();
@@ -14,7 +14,7 @@ fn encode_len(len: usize) -> EncodedLen {
     EncodedLen { offset, buffer }
 }
 
-/// The `KangarooTwelve` extendable-output and hash function defined [`here`].
+/// The `KangarooTwelve` hash function defined [`here`].
 ///
 /// [`here`]: https://eprint.iacr.org/2016/770.pdf
 #[derive(Clone)]
@@ -78,7 +78,27 @@ impl<T: AsRef<[u8]>> Hasher for KangarooTwelve<T> {
         }
     }
 
-    fn finalize(mut self, output: &mut [u8]) {
+    fn finalize(self, output: &mut [u8]) {
+        let mut xof = self.into_xof();
+        xof.squeeze(output);
+    }
+}
+
+/// The `KangarooTwelve` extendable-output function defined [`here`].
+///
+/// It can be created only by using [`KangarooTwelve::IntoXof`] interface.
+///
+/// [`here`]: https://eprint.iacr.org/2016/770.pdf
+/// [`KangarooTwelve::IntoXof`]: struct.KangarooTwelve.html#impl-IntoXof
+#[derive(Clone)]
+pub struct KangarooTwelveXof {
+    state: KeccakState<KeccakP>,
+}
+
+impl<T: AsRef<[u8]>> IntoXof for KangarooTwelve<T> {
+    type Xof = KangarooTwelveXof;
+
+    fn into_xof(mut self) -> KangarooTwelveXof {
         let custom_string = self
             .custom_string
             .take()
@@ -99,6 +119,12 @@ impl<T: AsRef<[u8]>> Hasher for KangarooTwelve<T> {
             self.state.delim = 0x06;
         }
 
-        self.state.finalize(output);
+        KangarooTwelveXof { state: self.state }
+    }
+}
+
+impl Xof for KangarooTwelveXof {
+    fn squeeze(&mut self, output: &mut [u8]) {
+        self.state.squeeze(output);
     }
 }
