@@ -6,8 +6,11 @@ An implementation of Keccak derived functions specified in [`FIPS-202`], [`SP800
 
 [travis-image]: https://travis-ci.org/debris/tiny-keccak.svg?branch=master
 [travis-url]: https://travis-ci.org/debris/tiny-keccak
+[`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
+[`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+[`KangarooTwelve`]: https://eprint.iacr.org/2016/770.pdf
 
-[Documentation](https://docs.rs/tiny-keccak)
+[`Documentation`](https://docs.rs/tiny-keccak)
 
 The `Keccak-f[1600]` permutation is fully unrolled; it's nearly as fast
 as the Keccak team's optimized permutation.
@@ -65,7 +68,3 @@ test rust_crypto_sha3_256_input_4096_bytes ... bench:      17,619 ns/iter (+/- 4
 test tiny_keccak_sha3_256_input_32_bytes   ... bench:         569 ns/iter (+/- 204) = 56 MB/s
 test tiny_keccak_sha3_256_input_4096_bytes ... bench:      17,185 ns/iter (+/- 4,575) = 238 MB/s
 ```
-
-Why tiny-keccak is twice faster? It's optimized with:
-- [loop unwinding](https://en.wikipedia.org/wiki/Loop_unrolling)
-- [removed bounds checking](https://en.wikipedia.org/wiki/Bounds_checking)
