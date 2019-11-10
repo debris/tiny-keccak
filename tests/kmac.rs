@@ -1,4 +1,4 @@
-use tiny_keccak::{Hasher, Kmac, Xof, IntoXof};
+use tiny_keccak::{Hasher, IntoXof, Kmac, Xof};
 
 #[test]
 fn test_kmac128_one() {

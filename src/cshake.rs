@@ -2,14 +2,14 @@
 //!
 //! [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 
-use crate::{bits_to_rate, keccakf::KeccakF, left_encode, Hasher, KeccakXof, Xof, IntoXof};
+use crate::{bits_to_rate, keccakf::KeccakF, left_encode, Hasher, IntoXof, KeccakState, Xof};
 
 /// The `cSHAKE` extendable-output functions defined in [`SP800-185`].
 ///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 #[derive(Clone)]
 pub struct CShake {
-    state: KeccakXof<KeccakF>,
+    state: KeccakState<KeccakF>,
 }
 
 impl CShake {
@@ -34,11 +34,11 @@ impl CShake {
         // if there is no name and no customization string
         // cSHAKE is SHAKE
         if name.is_empty() && custom_string.is_empty() {
-            let state = KeccakXof::new(rate, 0x1f);
-            return CShake { state }
+            let state = KeccakState::new(rate, 0x1f);
+            return CShake { state };
         }
 
-        let mut state = KeccakXof::new(rate, Self::DELIM);
+        let mut state = KeccakState::new(rate, Self::DELIM);
         state.update(left_encode(rate).value());
         state.update(left_encode(name.len() * 8).value());
         state.update(name);

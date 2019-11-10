@@ -1,11 +1,11 @@
-use crate::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakXof, Xof, IntoXof};
+use crate::{bits_to_rate, keccakf::KeccakF, Hasher, IntoXof, KeccakState, Xof};
 
 /// The `SHAKE` extendable-output functions defined in [`FIPS-202`].
 ///
 /// [`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
 #[derive(Clone)]
 pub struct Shake {
-    state: KeccakXof<KeccakF>,
+    state: KeccakState<KeccakF>,
 }
 
 impl Shake {
@@ -27,7 +27,7 @@ impl Shake {
 
     pub(crate) fn new(bits: usize) -> Shake {
         Shake {
-            state: KeccakXof::new(bits_to_rate(bits), Self::DELIM),
+            state: KeccakState::new(bits_to_rate(bits), Self::DELIM),
         }
     }
 }

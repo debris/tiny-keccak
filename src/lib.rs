@@ -21,6 +21,7 @@
 //! - [`@quininer`] for `no-std` support and rust implementation [`SP800-185`]
 //! - [`mimoo/GoKangarooTwelve`] for GO implementation of `KangarooTwelve`
 //! - [`@Vurich`] for optimizations
+//! - [`@oleganza`] for adding support for half-duplex use
 //!
 //! License: [`CC0`], attribution kindly requested. Blame taken too,
 //! but not liability.
@@ -345,11 +346,18 @@ trait Permutation {
     fn execute(a: &mut Buffer);
 }
 
+#[derive(Clone, Copy)]
+enum Mode {
+    Absorbing,
+    Squeezing,
+}
+
 struct KeccakState<P> {
     buffer: Buffer,
     offset: usize,
     rate: usize,
     delim: u8,
+    mode: Mode,
     permutation: core::marker::PhantomData<P>,
 }
 
@@ -360,6 +368,7 @@ impl<P> Clone for KeccakState<P> {
             offset: self.offset,
             rate: self.rate,
             delim: self.delim,
+            mode: self.mode,
             permutation: core::marker::PhantomData,
         }
     }
@@ -373,6 +382,7 @@ impl<P: Permutation> KeccakState<P> {
             offset: 0,
             rate,
             delim,
+            mode: Mode::Absorbing,
             permutation: core::marker::PhantomData,
         }
     }
@@ -382,6 +392,11 @@ impl<P: Permutation> KeccakState<P> {
     }
 
     fn update(&mut self, input: &[u8]) {
+        if let Mode::Squeezing = self.mode {
+            self.mode = Mode::Absorbing;
+            self.fill_block();
+        }
+
         //first foldp
         let mut ip = 0;
         let mut l = input.len();
@@ -396,7 +411,6 @@ impl<P: Permutation> KeccakState<P> {
             offset = 0;
         }
 
-        // Xor in the last block
         self.buffer.xorin(&input[ip..], offset, l);
         self.offset = offset + l;
     }
@@ -406,26 +420,31 @@ impl<P: Permutation> KeccakState<P> {
     }
 
     fn squeeze(&mut self, output: &mut [u8]) {
+        if let Mode::Absorbing = self.mode {
+            self.mode = Mode::Squeezing;
+            self.pad();
+            self.fill_block();
+        }
+
         // second foldp
         let mut op = 0;
         let mut l = output.len();
-        while l >= self.rate {
-            self.buffer.setout(&mut output[op..], 0, self.rate);
+        let mut rate = self.rate - self.offset;
+        let mut offset = self.offset;
+        while l >= rate {
+            self.buffer.setout(&mut output[op..], offset, rate);
             self.keccak();
-            op += self.rate;
-            l -= self.rate;
+            op += rate;
+            l -= rate;
+            rate = self.rate;
+            offset = 0;
         }
 
-        self.buffer.setout(&mut output[op..], 0, l);
+        self.buffer.setout(&mut output[op..], offset, l);
+        self.offset = offset + l;
     }
 
     fn finalize(mut self, output: &mut [u8]) {
-        self.pad();
-
-        // apply keccak
-        self.keccak();
-
-        // squeeze output
         self.squeeze(output);
     }
 
@@ -437,69 +456,6 @@ impl<P: Permutation> KeccakState<P> {
     fn reset(&mut self) {
         self.buffer = Buffer::default();
         self.offset = 0;
-    }
-}
-
-/// eXtendable Output Function (XOF).
-struct KeccakXof<P> {
-    state: KeccakState<P>,
-    offset: usize,
-    xof_started: bool,
-}
-
-impl<P> Clone for KeccakXof<P> {
-    fn clone(&self) -> Self {
-        KeccakXof {
-            state: self.state.clone(),
-            offset: self.offset,
-            xof_started: false,
-        }
-    }
-}
-
-impl<P: Permutation> KeccakXof<P> {
-    fn new(rate: usize, delim: u8) -> Self {
-        KeccakXof {
-            state: KeccakState::new(rate, delim),
-            offset: 0,
-            xof_started: false,
-        }
-    }
-
-    fn squeeze(&mut self, output: &mut [u8]) {
-        if !self.xof_started {
-            self.xof_started = true;
-            self.state.pad();
-            self.state.keccak();
-        }
-        // second foldp
-        let mut op = 0;
-        let mut l = output.len();
-        let mut rate = self.state.rate - self.offset;
-        let mut offset = self.offset;
-        while l >= rate {
-            self.state.buffer.setout(&mut output[op..], offset, rate);
-            self.state.keccak();
-            op += rate;
-            l -= rate;
-            rate = self.state.rate;
-            offset = 0;
-        }
-
-        self.state.buffer.setout(&mut output[op..], offset, l);
-        self.offset = offset + l;
-    }
-
-    fn update(&mut self, input: &[u8]) {
-        self.state.update(input);
-    }
-
-    fn finalize(self, output: &mut [u8]) {
-        self.state.finalize(output);
-    }
-
-    fn fill_block(&mut self) {
-        self.state.fill_block();
     }
 }
 

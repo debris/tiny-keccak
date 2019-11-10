@@ -1,4 +1,4 @@
-use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher, Xof, IntoXof};
+use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher, IntoXof, Xof};
 
 /// The `KMAC` pseudo-random functions defined in [`SP800-185`].
 ///
@@ -42,9 +42,7 @@ impl Kmac {
         state.update(left_encode(key.len() * 8).value());
         state.update(key);
         state.fill_block();
-        Kmac {
-            state,
-        }
+        Kmac { state }
     }
 }
 
@@ -75,9 +73,7 @@ impl IntoXof for Kmac {
 
     fn into_xof(mut self) -> Self::Xof {
         self.state.update(right_encode(0).value());
-        KmacXof {
-            state: self.state,
-        }
+        KmacXof { state: self.state }
     }
 }
 

@@ -39,6 +39,8 @@ matrix:
       rust: stable
     - env: TARGET=x86_64-unknown-linux-gnu FEATURES="--features tuple_hash"
       rust: stable
+    - env: TARGET=x86_64-unknown-linux-gnu FEATURES="--features parallel_hash"
+      rust: stable
 
 install:
   - cargo install cross --force

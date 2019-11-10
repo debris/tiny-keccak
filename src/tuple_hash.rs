@@ -1,4 +1,4 @@
-use crate::{left_encode, right_encode, CShake, Hasher, Xof, IntoXof};
+use crate::{left_encode, right_encode, CShake, Hasher, IntoXof, Xof};
 
 /// The `TupleHash` extendable-output and hash functions defined in [`SP800-185`].
 ///
@@ -65,9 +65,7 @@ impl IntoXof for TupleHash {
     fn into_xof(self) -> TupleHashXof {
         let mut state = self.state;
         state.update(right_encode(0).value());
-        TupleHashXof {
-            state,
-        }
+        TupleHashXof { state }
     }
 }
 

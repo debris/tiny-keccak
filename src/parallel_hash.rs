@@ -1,4 +1,4 @@
-use crate::{left_encode, right_encode, CShake, Hasher, Shake, Xof, IntoXof};
+use crate::{left_encode, right_encode, CShake, Hasher, IntoXof, Shake, Xof};
 
 #[derive(Clone)]
 struct UnfinishedState {
@@ -158,9 +158,7 @@ impl IntoXof for ParallelHash {
         self.state.update(right_encode(self.blocks).value());
         self.state.update(right_encode(0).value());
 
-        ParallelHashXof {
-            state: self.state
-        }
+        ParallelHashXof { state: self.state }
     }
 }
 
