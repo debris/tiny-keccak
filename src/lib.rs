@@ -133,7 +133,8 @@ pub use keccakp::keccakp;
     feature = "sha3",
     feature = "cshake",
     feature = "kmac",
-    feature = "tuple_hash"
+    feature = "tuple_hash",
+    feature = "parallel_hash"
 ))]
 mod keccakf;
 
@@ -143,7 +144,8 @@ mod keccakf;
     feature = "sha3",
     feature = "cshake",
     feature = "kmac",
-    feature = "tuple_hash"
+    feature = "tuple_hash",
+    feature = "parallel_hash"
 ))]
 pub use keccakf::keccakf;
 

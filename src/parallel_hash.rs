@@ -37,6 +37,13 @@ impl Suboutout {
 /// taking advantage of the parallelism available in modern processors. `ParallelHash` supports the
 /// [`128-bit`] and [`256-bit`] security strengths, and also provides variable-length output.
 ///
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["parallel_hash"] }
+/// ```
+///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 /// [`128-bit`]: struct.ParallelHash.html#method.v128
 /// [`256-bit`]: struct.ParallelHash.html#method.v256
@@ -141,9 +148,33 @@ impl Hasher for ParallelHash {
 
 /// The `ParallelHashXOF` extendable-output functions defined in [`SP800-185`].
 ///
-/// It can be created only by using [`ParallelHash::IntoXof`] interface.
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["parallel_hash"] }
+/// ```
+///
+/// # Example
+///
+/// ```
+/// # use tiny_keccak::{ParallelHash, Xof, IntoXof, Hasher};
+/// let input = b"hello world";
+/// let mut output = [0u8; 64];
+/// let mut hasher = ParallelHash::v256(b"", 8);
+/// hasher.update(input);
+/// let mut xof = hasher.into_xof();
+/// xof.squeeze(&mut output[..32]);
+/// xof.squeeze(&mut output[32..]);
+/// ```
+///
+/// ---
+///
+/// [`ParallelHashXof`] can be created only by using [`ParallelHash::IntoXof`] interface.
+///
 ///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+/// [`ParallelHashXof`]: struct.ParallelHashXof.html
 /// [`ParallelHash::IntoXof`]: struct.ParallelHash.html#impl-IntoXof
 #[derive(Clone)]
 pub struct ParallelHashXof {

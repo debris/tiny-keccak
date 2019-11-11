@@ -4,6 +4,13 @@ use crate::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakState};
 ///
 /// [`FIPS-202`]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
 ///
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["sha3"] }
+/// ```
+///
 /// # Example
 ///
 /// ```

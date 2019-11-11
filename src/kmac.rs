@@ -8,6 +8,13 @@ use crate::{bits_to_rate, left_encode, right_encode, CShake, Hasher, IntoXof, Xo
 /// [`KMAC256`], built from [`cSHAKE128`] and [`cSHAKE256`], respectively. The two variants differ somewhat in
 /// their technical security properties.
 ///
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["kmac"] }
+/// ```
+///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 /// [`KMAC128`]: struct.Kmac.html#method.v128
 /// [`KMAC256`]: struct.Kmac.html#method.v256
@@ -59,9 +66,32 @@ impl Hasher for Kmac {
 
 /// The `KMACXOF` extendable-output functions defined in [`SP800-185`].
 ///
-/// It can be created only by using [`Kmac::IntoXof`] interface.
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["kmac"] }
+/// ```
+///
+/// # Example
+///
+/// ```
+/// # use tiny_keccak::{Kmac, Xof, IntoXof, Hasher};
+/// let input = b"hello world";
+/// let mut output = [0u8; 64];
+/// let mut kmac = Kmac::v256(b"", b"");
+/// kmac.update(input);
+/// let mut xof = kmac.into_xof();
+/// xof.squeeze(&mut output[..32]);
+/// xof.squeeze(&mut output[32..]);
+/// ```
+///
+/// ---
+///
+/// [`KmacXof`] can be created only by using [`Kmac::IntoXof`] interface.
 ///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+/// [`KmacXof`]: struct.KmacXof.html
 /// [`Kmac::IntoXof`]: struct.Kmac.html#impl-IntoXof
 #[derive(Clone)]
 pub struct KmacXof {
