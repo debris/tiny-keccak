@@ -6,6 +6,13 @@ use crate::{bits_to_rate, keccakf::KeccakF, left_encode, Hasher, KeccakState, Xo
 
 /// The `cSHAKE` extendable-output functions defined in [`SP800-185`].
 ///
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["cshake"] }
+/// ```
+///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 #[derive(Clone)]
 pub struct CShake {

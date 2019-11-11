@@ -8,6 +8,13 @@ use crate::{left_encode, right_encode, CShake, Hasher, IntoXof, Xof};
 /// all the remaining input parameters are kept the same, and the two resulting concatenated
 /// strings, without string encoding, are identical.
 ///
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["tuple_hash"] }
+/// ```
+///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
 #[derive(Clone)]
 pub struct TupleHash {
@@ -50,9 +57,33 @@ impl Hasher for TupleHash {
 
 /// The `TupleHashXOF` extendable-output functions defined in [`SP800-185`].
 ///
-/// It can be created only by using [`TupleHash::IntoXof`] interface.
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["tuple_hash"] }
+/// ```
+///
+/// # Example
+///
+/// ```
+/// # use tiny_keccak::{TupleHash, Xof, IntoXof, Hasher};
+/// let input = b"hello world";
+/// let mut output = [0u8; 64];
+/// let mut hasher = TupleHash::v256(b"");
+/// hasher.update(input);
+/// let mut xof = hasher.into_xof();
+/// xof.squeeze(&mut output[..32]);
+/// xof.squeeze(&mut output[32..]);
+/// ```
+///
+/// ---
+///
+/// [`TupleHashXof`] can be created only by using [`TupleHash::IntoXof`] interface.
+///
 ///
 /// [`SP800-185`]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf
+/// [`TupleHashXof`]: struct.TupleHashXof.html
 /// [`TupleHash::IntoXof`]: struct.TupleHash.html#impl-IntoXof
 #[derive(Clone)]
 pub struct TupleHashXof {

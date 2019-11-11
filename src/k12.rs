@@ -16,6 +16,13 @@ fn encode_len(len: usize) -> EncodedLen {
 
 /// The `KangarooTwelve` hash function defined [`here`].
 ///
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["k12"] }
+/// ```
+///
 /// [`here`]: https://eprint.iacr.org/2016/770.pdf
 #[derive(Clone)]
 pub struct KangarooTwelve<T> {
@@ -86,9 +93,32 @@ impl<T: AsRef<[u8]>> Hasher for KangarooTwelve<T> {
 
 /// The `KangarooTwelve` extendable-output function defined [`here`].
 ///
-/// It can be created only by using [`KangarooTwelve::IntoXof`] interface.
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["k12"] }
+/// ```
+///
+/// # Example
+///
+/// ```
+/// # use tiny_keccak::{KangarooTwelve, Xof, IntoXof, Hasher};
+/// let input = b"hello world";
+/// let mut output = [0u8; 64];
+/// let mut hasher = KangarooTwelve::new(b"");
+/// hasher.update(input);
+/// let mut xof = hasher.into_xof();
+/// xof.squeeze(&mut output[..32]);
+/// xof.squeeze(&mut output[32..]);
+/// ```
+///
+/// ---
+///
+/// [`KangarooTwelveXof`] can be created only by using [`KangarooTwelve::IntoXof`] interface.
 ///
 /// [`here`]: https://eprint.iacr.org/2016/770.pdf
+/// [`KangarooTwelveXof`]: struct.KangarooTwelveXof.html
 /// [`KangarooTwelve::IntoXof`]: struct.KangarooTwelve.html#impl-IntoXof
 #[derive(Clone)]
 pub struct KangarooTwelveXof {

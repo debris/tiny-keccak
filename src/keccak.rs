@@ -4,6 +4,13 @@ use super::{bits_to_rate, keccakf::KeccakF, Hasher, KeccakState};
 
 /// The `Keccak` hash functions defined in [`Keccak SHA3 submission`].
 ///
+/// # Usage
+///
+/// ```toml
+/// [dependencies]
+/// tiny-keccak = { version = "2.0.0", features = ["keccak"] }
+/// ```
+///
 /// [`Keccak SHA3 submission`]: https://keccak.team/files/Keccak-submission-3.pdf
 #[derive(Clone)]
 pub struct Keccak {
