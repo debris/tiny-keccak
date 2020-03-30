@@ -5,7 +5,10 @@
     feature = "cshake",
     feature = "kmac",
     feature = "tuple_hash",
-    feature = "parallel_hash"
+    feature = "parallel_hash",
+    feature = "k12",
+    feature = "fips202",
+    feature = "sp800"
 )))]
 compile_error!(
     "You need to specify at least one hash function you intend to use. \
