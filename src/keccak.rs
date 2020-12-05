@@ -53,6 +53,11 @@ impl Keccak {
             state: KeccakState::new(bits_to_rate(bits), Self::DELIM),
         }
     }
+
+    /// Resets the internal state
+    pub fn reset(&mut self) {
+        self.state.reset();
+    }
 }
 
 impl Hasher for Keccak {
