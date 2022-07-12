@@ -221,6 +221,8 @@ pub trait Hasher {
     fn finalize(self, output: &mut [u8]);
 }
 
+
+
 /// A trait used to convert [`Hasher`] into it's [`Xof`] counterpart.
 ///
 /// # Example
@@ -265,6 +267,25 @@ pub trait Xof {
     /// A method used to retrieve another part of hash function output.
     fn squeeze(&mut self, output: &mut [u8]);
 }
+
+/// Hasher version marker trait, used to support [`digest::Digest`]
+pub trait Version: generic_array::ArrayLength<u8> {}
+
+/// 224-bit digest marker type
+pub type V224 = digest::consts::U28;
+impl Version for V224 {}
+
+/// 256-bit digest marker type
+pub type V256 = digest::consts::U32;
+impl Version for V256 {}
+
+/// 348-bit digest marker type
+pub type V384 = digest::consts::U48;
+impl Version for V384 {}
+
+/// 512-bit digest marker type
+pub type V512 = digest::consts::U64;
+impl Version for V512 {}
 
 struct EncodedLen {
     offset: usize,
